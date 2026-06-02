@@ -44,5 +44,15 @@ export default function PageView({
     );
   }
   if (status !== "ready" || !page) return null;
-  return <PageEditor page={page} notebookId={id} />;
+  // Normalize the optional `ocr_lines` field PageEditor expects as `string[] | null`.
+  const normalizedPage = {
+    id: page.id,
+    notebook_id: page.notebook_id,
+    problem: page.problem,
+    strokes: page.strokes,
+    ocr_lines: page.ocr_lines ?? null,
+    created_at: page.created_at,
+    updated_at: page.updated_at,
+  };
+  return <PageEditor page={normalizedPage} notebookId={id} />;
 }

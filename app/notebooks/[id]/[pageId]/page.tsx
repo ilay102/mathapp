@@ -1,23 +1,48 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import PageEditor from "./PageEditor";
+import { getPage, type DbPage } from "@/lib/dataService";
 
-export const dynamic = "force-dynamic";
-
-export default async function PageView({
+export default function PageView({
   params,
 }: { params: Promise<{ id: string; pageId: string }> }) {
-  const { id, pageId } = await params;
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) redirect("/login");
+  const { id, pageId } = use(params);
+  const router = useRouter();
+  const [page, setPage] = useState<DbPage | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "missing">("loading");
 
-  const { data: page } = await sb
-    .from("pages")
-    .select("id, notebook_id, problem, strokes, ocr_lines")
-    .eq("id", pageId)
-    .single();
-  if (!page) redirect(`/notebooks/${id}`);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await getPage(pageId);
+        if (cancelled) return;
+        if (!p) {
+          setStatus("missing");
+          router.replace(`/notebooks/${id}`);
+          return;
+        }
+        setPage(p);
+        setStatus("ready");
+      } catch {
+        if (!cancelled) {
+          setStatus("missing");
+          router.replace(`/notebooks/${id}`);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id, pageId, router]);
 
+  if (status === "loading") {
+    return (
+      <main className="mx-auto max-w-4xl p-6">
+        <div className="animate-pulse text-sm text-on-surface-variant">Loading page…</div>
+      </main>
+    );
+  }
+  if (status !== "ready" || !page) return null;
   return <PageEditor page={page} notebookId={id} />;
 }

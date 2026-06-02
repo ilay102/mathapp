@@ -126,13 +126,20 @@ Return STRICT JSON:
   "uncertainty": string | null
 }`;
 
-const FREE_DAILY_CAP = 3;
-const PRO_DAILY_CAP = 25;
+const FREE_DAILY_CAP = Number(process.env.FREE_DAILY_CAP ?? 10);
+const PRO_DAILY_CAP = Number(process.env.PRO_DAILY_CAP ?? 50);
+const RATE_LIMIT_DISABLED = process.env.DISABLE_RATE_LIMIT === "1";
 
 const ipCache = new Map<string, { count: number; day: string }>();
 const checksCache = new Map<string, { result: any; expiresAt: number }>();
 
+function isLocalIp(ip: string): boolean {
+  return ip === "127.0.0.1" || ip === "::1" || ip === "localhost" || ip.startsWith("192.168.") || ip.startsWith("10.");
+}
+
 function checkIpLimit(ip: string): boolean {
+  // Always allow localhost / private network IPs (dev + tests).
+  if (RATE_LIMIT_DISABLED || isLocalIp(ip)) return true;
   const today = new Date().toISOString().split("T")[0];
   const cached = ipCache.get(ip);
   if (!cached || cached.day !== today) {

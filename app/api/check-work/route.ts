@@ -90,6 +90,15 @@ GRADING RULES:
 - A solution missing "$+ C$" on indefinite integrals or "$\\ln|x|$" without absolute values → flag as notation error (still wrong).
 - A "proof" that assumes the conclusion (circular) → logic error.
 
+UNIT-AWARE RULE (for physics / engineering):
+When a problem involves physical quantities (kg, m/s, N, J, V, A, Ω, Pa, etc.):
+- Treat every numeric quantity as having a value AND a unit.
+- Verify dimensional consistency on every line. Adding "5 m/s + 10 kg" is WRONG (errorType: notation, with a clear hint).
+- The final answer's units must match what's being asked (force → N, energy → J, velocity → m/s, ...).
+- If the student wrote a correct number but DROPPED THE UNITS (e.g. "v = 5" instead of "5 m/s") on the final answer, flag as a notation error — don't mark the whole thing wrong, but require the unit on the corrected line.
+- Recognize auto-derived units: kg·m/s² IS Newtons; kg·m²/s² IS Joules; V·A IS Watts; V/A IS Ohms. Don't penalize the student for writing the long form OR the short form; both are correct.
+- Cross-system conversions (12 in + 30 cm = 0.6048 m) are fine; only mismatched DIMENSIONS are wrong.
+
 INTERMEDIATE-STEP RULE (very important):
 A student is often mid-solving. NEVER mark a line "wrong" if it is a valid intermediate step that hasn't been simplified yet. Examples that are CORRECT (not wrong):
 - "f'(x) = cos(x²) · d/dx[x²]"  ← unsimplified application of chain rule, before evaluating d/dx[x²]

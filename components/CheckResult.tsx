@@ -5,6 +5,7 @@ import "katex/dist/katex.min.css";
 import { InlineMath } from "react-katex";
 import MathText from "./MathText";
 import FunctionGraph from "./FunctionGraph";
+import Graph3D from "./Graph3D";
 import PracticeMore from "./PracticeMore";
 import { type Lang, t, localizeDomain, localizeTechnique } from "@/lib/i18n";
 
@@ -26,9 +27,11 @@ export type CheckResultData = {
   technique?: string | null;
   finalAnswer?: string | null;
   graphExpr?: string | null;
+  graphExpr3D?: string | null;
   graphRange?: [number, number] | null;
   studentExpr?: string | null;
   integralRange?: [number, number] | null;
+  chartType?: "1d" | "slopefield" | "vectorfield" | "parametric" | "polar" | null;
   workedSolution?: { math: string; explain: string }[] | null;
   // legacy single-error fields (still populated by API for back-compat)
   firstErrorLineIndex?: number | null;
@@ -124,6 +127,8 @@ export default function CheckResult({
   const errorByLine = new Map<number, ErrorEntry>();
   errors.forEach((e) => errorByLine.set(e.lineIndex, e));
 
+  const [currentRange, setCurrentRange] = useState<[number, number] | null>(null);
+
   const confPct = Math.round((result.confidence ?? 0) * 100);
   const errorCount = errors.length;
 
@@ -169,23 +174,40 @@ export default function CheckResult({
             {t("graphTitle", lang)}
             {result.graphRange && (
               <span className="text-on-surface-variant/70 normal-case font-normal">
-                ({t("graphRange", lang)} [{result.graphRange[0]}, {result.graphRange[1]}])
+                ({t("graphRange", lang)} [{fmt(currentRange?.[0] ?? result.graphRange[0])}, {fmt(currentRange?.[1] ?? result.graphRange[1])}])
               </span>
             )}
           </div>
           <FunctionGraph
             range={result.graphRange ?? undefined}
             integralRange={result.integralRange ?? undefined}
-            curves={[
-              { expr: result.graphExpr, color: "#10b981", label: result.graphExpr, style: "solid" },
-              ...(result.studentExpr ? [{
-                expr: result.studentExpr,
-                color: "#dc2626",
-                label: `(yours) ${result.studentExpr}`,
-                style: "dashed" as const,
-              }] : []),
-            ]}
+            onViewChange={setCurrentRange}
+            chartType={result.chartType === "slopefield" || result.chartType === "vectorfield" || result.chartType === "parametric" || result.chartType === "polar" ? result.chartType : "1d"}
+            {...(result.chartType === "1d" || !result.chartType) ? {
+              curves: [
+                { expr: result.graphExpr, color: "#10b981", label: result.graphExpr, style: "solid" },
+                ...(result.studentExpr ? [{
+                  expr: result.studentExpr,
+                  color: "#dc2626",
+                  label: `(yours) ${result.studentExpr}`,
+                  style: "dashed" as const,
+                }] : []),
+              ]
+            } : {
+              expr: result.graphExpr,
+            }}
           />
+        </div>
+      )}
+
+      {/* 3D surface plot — only when grader returns graphExpr3D */}
+      {result.graphExpr3D && (
+        <div className="border-b border-outline-variant/30 px-5 py-3">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            <span className="material-symbols-outlined text-sm">3d_rotation</span>
+            {lang === "he" ? "גרף תלת-מימדי (z = f(x,y))" : "3D Surface Graph (z = f(x,y))"}
+          </div>
+          <Graph3D expr={result.graphExpr3D} />
         </div>
       )}
 
@@ -377,4 +399,10 @@ function ExerciseLine({
       </div>
     </li>
   );
+}
+
+function fmt(n: number): string {
+  if (!Number.isFinite(n)) return "—";
+  if (Math.abs(n) >= 1000 || (Math.abs(n) > 0 && Math.abs(n) < 0.01)) return n.toExponential(1);
+  return Number(n.toFixed(2)).toString();
 }

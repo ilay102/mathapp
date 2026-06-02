@@ -6,6 +6,9 @@ import MathCanvas, { type MathCanvasHandle } from "./MathCanvas";
 import MathPalette from "./MathPalette";
 import type { Part } from "@/lib/exercise";
 import { type Lang, t } from "@/lib/i18n";
+import { MathInputContext } from "@/lib/mathInputContext";
+import { InlineMath } from "react-katex";
+import "katex/dist/katex.min.css";
 
 function dataURLtoBlob(dataURL: string): Blob {
   const [header, b64] = dataURL.split(",");
@@ -14,6 +17,14 @@ function dataURLtoBlob(dataURL: string): Blob {
   const arr = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
   return new Blob([arr], { type: mime });
+}
+
+function SafeLatex({ tex, className = "" }: { tex: string; className?: string }) {
+  try {
+    return <span className={className}><InlineMath math={tex} /></span>;
+  } catch {
+    return <code className={`rounded bg-neutral-100 px-1 text-sm ${className}`}>{tex}</code>;
+  }
 }
 
 type Props = {
@@ -40,6 +51,7 @@ export default function PartCard({
   const [penColor, setPenColor] = useState<string>("#1f2937");
   const [penSize, setPenSize] = useState<number>(3);
   const [appendMode, setAppendMode] = useState<boolean>(false);
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const canvasRef = useRef<MathCanvasHandle>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -186,15 +198,16 @@ export default function PartCard({
   const showLabel = totalParts > 1 || part.label || part.subPrompt;
 
   return (
-    <div
-      ref={cardRef}
-      className={
-        "rounded-xl border bg-surface-container-low/30 " +
-        (totalParts > 1
-          ? "border-outline-variant/50"
-          : "border-transparent bg-transparent")
-      }
-    >
+    <MathInputContext.Provider value={insertAtCursor}>
+      <div
+        ref={cardRef}
+        className={
+          "rounded-xl border bg-surface-container-low/30 " +
+          (totalParts > 1
+            ? "border-outline-variant/50"
+            : "border-transparent bg-transparent")
+        }
+      >
       {showLabel && (
         <div className="flex items-start gap-3 px-4 py-3 border-b border-outline-variant/30">
           <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-on-secondary text-xs font-bold">
@@ -226,21 +239,79 @@ export default function PartCard({
           <div className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
             {t("yourWork", lang)}
           </div>
-          <div className="inline-flex rounded-full bg-surface-container p-0.5 text-xs">
-            <button
-              onClick={() => setInputMode("write")}
-              className={"flex items-center gap-1 rounded-full px-3 py-1 transition-colors " +
-                (inputMode === "write" ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:bg-white/50")}
-            >
-              <span className="material-symbols-outlined text-sm">edit</span> {t("write", lang)}
-            </button>
-            <button
-              onClick={() => setInputMode("type")}
-              className={"flex items-center gap-1 rounded-full px-3 py-1 transition-colors " +
-                (inputMode === "type" ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:bg-white/50")}
-            >
-              <span className="material-symbols-outlined text-sm">keyboard</span> {t("type", lang)}
-            </button>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-full bg-surface-container p-0.5 text-xs">
+              <button
+                onClick={() => setInputMode("write")}
+                className={"flex items-center gap-1 rounded-full px-3 py-1 transition-colors " +
+                  (inputMode === "write" ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:bg-white/50")}
+              >
+                <span className="material-symbols-outlined text-sm">edit</span> {t("write", lang)}
+              </button>
+              <button
+                onClick={() => setInputMode("type")}
+                className={"flex items-center gap-1 rounded-full px-3 py-1 transition-colors " +
+                  (inputMode === "type" ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:bg-white/50")}
+              >
+                <span className="material-symbols-outlined text-sm">keyboard</span> {t("type", lang)}
+              </button>
+            </div>
+
+            {/* Overflow Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant transition-colors"
+                aria-label="More options"
+              >
+                <span className="material-symbols-outlined">more_vert</span>
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 mt-1 w-48 rounded-xl border border-outline-variant/60 bg-surface-container-lowest p-1.5 shadow-lg z-20" dir={lang === "he" ? "rtl" : "ltr"}>
+                    {inputMode === "write" && (
+                      <>
+                        <button
+                          onClick={() => {
+                            readHandwriting();
+                            setMenuOpen(false);
+                          }}
+                          disabled={ocrLoading}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                          <span>{ocrLoading ? t("reading", lang) : t("previewReading", lang)}</span>
+                        </button>
+                        
+                        <label className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-on-surface hover:bg-surface-container transition-colors cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={appendMode}
+                            onChange={(e) => setAppendMode(e.target.checked)}
+                            className="accent-primary"
+                          />
+                          <span>{t("appendDontReplace", lang)}</span>
+                        </label>
+                        
+                        <div className="my-1 h-px bg-outline-variant/40" />
+                      </>
+                    )}
+                    
+                    <button
+                      onClick={() => {
+                        startFresh();
+                        setMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-error hover:bg-error-container/20 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">refresh</span>
+                      <span>{t("startFresh", lang)}</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -285,18 +356,6 @@ export default function PartCard({
             <div className="ruled-paper relative rounded-lg border border-outline-variant/40 shadow-inner overflow-hidden">
               <MathCanvas ref={canvasRef} height={240} color={penColor} size={penSize} initialStrokes={part.strokes || []} onChange={(strokes) => update({ strokes })} />
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button onClick={readHandwriting} disabled={ocrLoading}
-                className="inline-flex items-center gap-1 rounded-full bg-secondary-fixed px-3 py-1.5 text-xs font-medium text-secondary hover:bg-secondary-fixed/80 disabled:opacity-50">
-                <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                {ocrLoading ? t("reading", lang) : t("previewReading", lang)}
-              </button>
-              <label className="inline-flex items-center gap-1 text-[11px] text-on-surface-variant">
-                <input type="checkbox" checked={appendMode} onChange={(e) => setAppendMode(e.target.checked)} className="accent-primary" />
-                {t("appendDontReplace", lang)}
-              </label>
-            </div>
           </div>
         )}
 
@@ -311,37 +370,54 @@ export default function PartCard({
           </div>
         )}
 
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] text-on-surface-variant">
-              {inputMode === "write" ? t("whatWellGrade", lang) : t("oneStepPerLine", lang)}
+        {inputMode === "write" && !part.linesText.trim() ? (
+          <div className="notebook-page flex items-start gap-2 p-4 text-sm text-on-surface-variant italic">
+            <span className="material-symbols-outlined text-sm text-primary/60 mt-0.5">edit_note</span>
+            <span style={{ fontFamily: "Caveat, cursive", fontSize: "18px", lineHeight: "1.6" }}>
+              {t("autoReadHint", lang)}
+            </span>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] text-on-surface-variant">
+                {inputMode === "write" ? t("whatWellGrade", lang) : t("oneStepPerLine", lang)}
+              </div>
             </div>
-            {(part.linesText.trim() || part.lastResult) && (
-              <button
-                onClick={startFresh}
-                className="inline-flex items-center gap-1 rounded-full border border-outline-variant px-2.5 py-1 text-[11px] font-medium text-on-surface-variant hover:bg-error-container hover:text-on-error-container hover:border-error/40 transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm">refresh</span>
-                {t("startFresh", lang)}
-              </button>
+            {inputMode === "type" && (
+              <div className="mb-2">
+                <MathPalette />
+              </div>
+            )}
+            <textarea
+              ref={textareaRef}
+              value={part.linesText}
+              onChange={(e) => update({ linesText: e.target.value })}
+              onFocus={onFocus}
+              rows={inputMode === "write" ? 4 : 6}
+              className="notebook-textarea w-full resize-y"
+              placeholder={inputMode === "write" ? "" : "Step 1…\nStep 2…\nStep 3…"}
+              dir="auto"
+            />
+            {part.linesText.trim() && (
+              <div className="notebook-page mt-2 p-3 space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-outline mb-1">
+                  {lang === "he" ? "תצוגה מקדימה" : "Live Preview"}
+                </div>
+                <div className="divide-y divide-outline-variant/20">
+                  {part.linesText.split("\n").map((line, i) => (
+                    <div key={i} className="py-1 text-lg flex items-center gap-2">
+                      <span className="text-xs text-outline select-none font-mono">[{i + 1}]</span>
+                      <div className="flex-1 overflow-x-auto py-1">
+                        <SafeLatex tex={line} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-          {inputMode === "type" && (
-            <div className="mb-2">
-              <MathPalette onSelectSymbol={insertAtCursor} />
-            </div>
-          )}
-          <textarea
-            ref={textareaRef}
-            value={part.linesText}
-            onChange={(e) => update({ linesText: e.target.value })}
-            onFocus={onFocus}
-            rows={inputMode === "write" ? 3 : 5}
-            className="handwritten w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-lowest p-3 text-xl leading-relaxed text-on-surface focus:border-primary focus:outline-none"
-            placeholder={inputMode === "write" ? "" : "Step 1…\nStep 2…\nStep 3…"}
-            dir="auto"
-          />
-        </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-3">
           <button onClick={check} disabled={loading}
@@ -367,5 +443,6 @@ export default function PartCard({
         )}
       </div>
     </div>
+    </MathInputContext.Provider>
   );
 }

@@ -58,6 +58,83 @@ canvas { touch-action: none; }
   border: 1px solid rgba(196, 197, 216, 0.55);
 }
 
+/* === Spiral-binding decoration: little punched circles down the left edge === */
+.spiral-bind {
+  position: relative;
+}
+.spiral-bind::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 16px;
+  bottom: 16px;
+  width: 8px;
+  background-image: radial-gradient(circle at 4px 4px, rgba(0,0,0,0.18) 2.5px, transparent 3px);
+  background-size: 8px 28px;
+  background-repeat: repeat-y;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* === Real notebook paper textarea ===
+   Off-white paper, ruled horizontal lines that text actually sits ON,
+   a red left margin, soft shadow like a torn-from-spiral page.
+   Set line-height = 32px (matches the ruling). */
+.notebook-textarea {
+  background-color: #fffdf7;
+  background-image:
+    /* red left margin line, drawn at left padding boundary */
+    linear-gradient(to right, transparent 0, transparent 48px,
+      rgba(220, 38, 38, 0.35) 48px, rgba(220, 38, 38, 0.35) 49px,
+      transparent 49px),
+    /* horizontal ruled lines every 32px aligned with text baseline */
+    repeating-linear-gradient(to bottom, transparent 0, transparent 31px,
+      rgba(96, 130, 200, 0.32) 31px, rgba(96, 130, 200, 0.32) 32px);
+  /* Sits *exactly* on the rules */
+  line-height: 32px;
+  font-size: 22px;
+  padding: 6px 16px 6px 60px;        /* left padding past red margin */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px -8px rgba(0, 0, 0, 0.08);
+  font-family: 'Caveat', 'Hanken Grotesk', cursive;
+  color: #1a1a2e;
+  caret-color: #003fd2;
+  outline: none;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+.notebook-textarea:focus {
+  border-color: rgba(0, 63, 210, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 0 0 3px rgba(0, 63, 210, 0.08),
+    0 8px 24px -8px rgba(0, 0, 0, 0.1);
+}
+.notebook-textarea::placeholder {
+  color: rgba(26, 26, 46, 0.35);
+  font-style: italic;
+}
+
+/* Notebook "page" — used for the Live Preview, question card, etc. */
+.notebook-page {
+  background-color: #fffdf7;
+  background-image:
+    linear-gradient(to right, transparent 0, transparent 48px,
+      rgba(220, 38, 38, 0.30) 48px, rgba(220, 38, 38, 0.30) 49px,
+      transparent 49px),
+    repeating-linear-gradient(to bottom, transparent 0, transparent 31px,
+      rgba(96, 130, 200, 0.25) 31px, rgba(96, 130, 200, 0.25) 32px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 6px 18px -6px rgba(0, 0, 0, 0.08);
+}
+
 /* Highlighter underline for marking the wrong step */
 .error-mark {
   position: relative;

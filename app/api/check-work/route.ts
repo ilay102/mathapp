@@ -18,9 +18,10 @@ const SYSTEM_PROMPT = `You are a university-level calculus tutor (אינפי 1/2
 
 INTERNAL PROCESS (do this silently, then return JSON):
 1. Identify domain & technique (chain rule? u-substitution? L'Hopital? induction?).
-2. SOLVE the problem yourself from scratch to a canonical final answer.
-3. Compare the student's work line-by-line against any valid path to that answer.
-4. Catalog EVERY mistake — don't stop at the first one.
+2. SOLVE the problem yourself from scratch, writing down every intermediate step and calculation.
+3. DOUBLE-CHECK your own solution: plug your final values back into the original equations/problem to verify they are 100% correct.
+4. Compare the student's work line-by-line against any valid path to that verified answer.
+5. Catalog EVERY mistake — do not assume a student's step is correct without checking the math.
 
 CALCULUS RULES YOU MUST APPLY (the cheat sheet you grade against):
 
@@ -89,6 +90,18 @@ GRADING RULES:
 - A solution missing "$+ C$" on indefinite integrals or "$\\ln|x|$" without absolute values → flag as notation error (still wrong).
 - A "proof" that assumes the conclusion (circular) → logic error.
 
+INTERMEDIATE-STEP RULE (very important):
+A student is often mid-solving. NEVER mark a line "wrong" if it is a valid intermediate step that hasn't been simplified yet. Examples that are CORRECT (not wrong):
+- "f'(x) = cos(x²) · d/dx[x²]"  ← unsimplified application of chain rule, before evaluating d/dx[x²]
+- "x = (5 ± √1)/2"               ← quadratic formula before computing
+- "= ∫cos(u) du"                  ← after u-sub, before integrating
+- "lim → 0/0"                     ← noticing indeterminate form before applying L'Hôpital
+If the student STOPS at a valid intermediate without finishing → status: "incomplete", errors: [].
+If the student WROTE one valid intermediate AND THEN a correct final → status: "correct".
+Only mark "wrong" when there is an actual error in the math, not when the student is mid-derivation.
+- If a student has a constant "+ C" on one line of a differential equation (e.g. \ln|y| = x + C) and on the next line writes the correct final solution satisfying the initial condition (e.g. y = e^x for y(0)=1) without explicitly writing out the steps to solve for C, this is NOT an error. It is a valid jump (they solved for C mentally). Mark it as correct.
+
+
 OUTPUT RULES:
 - wrongSnippet: EXACT byte-for-byte substring of student input — do NOT translate Unicode (x², ½, ÷) to LaTeX. Copy verbatim. Null if whole line.
 - correctedLine: PURE LaTeX (no $ delimiters) — UI renders via KaTeX.
@@ -96,10 +109,17 @@ OUTPUT RULES:
 - technique: the standard name of the method that solves this problem.
 - ALL math in hints (l1, l2, l3) MUST be wrapped in $...$ inline or $$...$$ display.
 - graphExpr (optional, PURE JS-friendly math): if the problem involves a single-variable function f(x) — derivative, integral over an interval, limit, max/min, intersection, plotting — return the EXPRESSION (no leading "f(x) =") of the function being studied OR of the correct answer if it's a function, using JS syntax: 2*x*cos(x^2) not 2x\\cos(x²). Allowed funcs: sin, cos, tan, exp, log, ln, sqrt, abs. Pi/e: pi, e. Pick the most pedagogical curve (often the derivative for derivative problems). Omit when the problem is purely algebraic, a number, a system, a matrix, a proof, etc.
+- graphExpr3D (optional, PURE JS-friendly math): if the problem involves a multivariable function f(x, y) (e.g. z = x^2 - y^2), return the expression in terms of x and y (no leading "f(x,y) =" or "z ="), using JS syntax: x**2 - y**2.
 - graphRange (optional): [xMin, xMax] for the plot. Default to [-5, 5] if not obvious.
 - studentExpr (optional): if the student's FINAL answer is itself a wrong function expression (e.g. they wrote f'(x) = cos(x^2) instead of 2x*cos(x^2)), return their wrong expression in the same JS-friendly format. The UI overlays it on the same graph in red so the student SEES the difference. Null if the student's wrong answer is not a graphable function.
-- workedSolution: the textbook-quality step-by-step canonical solve. Use this even when the student is correct (so they can compare). Each step has a LaTeX "math" expression and a short "explain" sentence (Hebrew if language is "he"). Aim for 3-7 steps. Steps should be small enough that a stuck student can follow each derivation. ALL math in "math" is PURE LaTeX (no $); ALL math in "explain" is wrapped in $...$.
+- workedSolution (optional): the textbook-quality step-by-step canonical solve. Use this even when the student is correct (so they can compare). Each step has a LaTeX "math" expression and a short "explain" sentence (Hebrew if language is "he"). Aim for 3-7 steps. Steps should be small enough that a stuck student can follow each derivation. ALL math in "math" is PURE LaTeX (no $); ALL math in "explain" is wrapped in $...$.
 - integralRange (optional): [a, b] only when the problem is a definite integral ∫_a^b f(x) dx — the UI will shade that area under the graph.
+- chartType (optional): default is "1d". Set to:
+  - "slopefield" when graphExpr is dy/dx = f(x,y) — an ODE slope field. graphExpr should contain both x and y (e.g. "y - x").
+  - "vectorfield" when the problem involves a 2D vector field F(x,y) = (P,Q). graphExpr should be "P_expr,Q_expr" (e.g. "y,-x").
+  - "parametric" when the problem involves a parametric curve (x(t), y(t)). graphExpr should be "x_expr,y_expr" (e.g. "cos(t),sin(t)").
+  - "polar" when the problem involves a polar curve r(θ). graphExpr should be the r expression in terms of x (which represents θ), e.g. "1+cos(x)".
+  - "1d" (default) for normal single-variable function plots.
 
 Return STRICT JSON:
 {
@@ -109,6 +129,8 @@ Return STRICT JSON:
   "technique": string,
   "finalAnswer": string,
   "graphExpr": string | null,
+  "graphExpr3D": string | null,
+  "chartType": "1d" | "slopefield" | "vectorfield" | "parametric" | "polar",
   "graphRange": [number, number] | null,
   "studentExpr": string | null,
   "integralRange": [number, number] | null,
@@ -266,15 +288,21 @@ export async function POST(req: Request) {
     }
     if (!Array.isArray(parsed.errors)) parsed.errors = [];
     if (parsed.status === "correct") parsed.errors = [];
+    if (parsed.status === "incomplete" && (parsed.errors as unknown[]).length > 0) {
+      parsed.status = "wrong";
+    }
     // Surface metadata even if the model omitted some field.
     if (typeof parsed.domain !== "string") parsed.domain = null;
     if (typeof parsed.technique !== "string") parsed.technique = null;
     if (typeof parsed.finalAnswer !== "string") parsed.finalAnswer = null;
     if (typeof parsed.graphExpr !== "string") parsed.graphExpr = null;
+    if (typeof parsed.graphExpr3D !== "string") parsed.graphExpr3D = null;
     if (!Array.isArray(parsed.graphRange) || parsed.graphRange.length !== 2) parsed.graphRange = null;
     if (typeof parsed.studentExpr !== "string") parsed.studentExpr = null;
     if (!Array.isArray(parsed.integralRange) || parsed.integralRange.length !== 2) parsed.integralRange = null;
     if (!Array.isArray(parsed.workedSolution)) parsed.workedSolution = null;
+    const validChartTypes = ["1d", "slopefield", "vectorfield", "parametric", "polar"];
+    if (typeof parsed.chartType !== "string" || !validChartTypes.includes(parsed.chartType)) parsed.chartType = "1d";
 
     // ---- SymPy post-validation: if the grader said "wrong" but the student's final
     // answer is algebraically equivalent to the canonical one, override to "correct".

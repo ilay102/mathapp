@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { loadLang, type Lang } from "@/lib/i18n";
+import { MathInputContext } from "@/lib/mathInputContext";
 
 type Props = {
-  onSelectSymbol: (symbol: string) => void;
+  onSelectSymbol?: (symbol: string) => void;
 };
 
 type SymbolItem = {
@@ -14,7 +15,7 @@ type SymbolItem = {
 };
 
 export default function MathPalette({ onSelectSymbol }: Props) {
-  const [activeTab, setActiveTab] = useState<"calc" | "linalg" | "general" | "greek">("calc");
+  const [activeTab, setActiveTab] = useState<"calc" | "linalg" | "general" | "greek" | "constants">("calc");
   const lang = typeof window !== "undefined" ? (localStorage.getItem("mathpad.lang") as Lang || "en") : "en";
   const isRtl = lang === "he";
 
@@ -75,6 +76,35 @@ export default function MathPalette({ onSelectSymbol }: Props) {
         { label: "τ", latex: "\\tau ", tooltip: "Tau" },
       ],
     },
+    constants: {
+      title: isRtl ? "קבועים פיזיקליים" : "Constants",
+      items: [
+        { label: "π", latex: "\\pi ", tooltip: "Pi (3.1415)" },
+        { label: "e", latex: "e", tooltip: "Euler's constant (2.718)" },
+        { label: "φ", latex: "\\phi ", tooltip: "Golden ratio (1.618)" },
+        { label: "c", latex: "c", tooltip: "Speed of light (2.998e8 m/s)" },
+        { label: "G", latex: "G", tooltip: "Gravitational constant (6.674e-11)" },
+        { label: "h", latex: "h", tooltip: "Planck constant" },
+        { label: "ℏ", latex: "\\hbar ", tooltip: "Reduced Planck constant" },
+        { label: "k_B", latex: "k_B", tooltip: "Boltzmann constant" },
+        { label: "N_A", latex: "N_A", tooltip: "Avogadro number" },
+        { label: "R", latex: "R", tooltip: "Gas constant" },
+        { label: "ε_0", latex: "\\epsilon_0", tooltip: "Vacuum permittivity" },
+        { label: "μ_0", latex: "\\mu_0", tooltip: "Vacuum permeability" },
+        { label: "g", latex: "g", tooltip: "Standard gravity (9.81 m/s²)" },
+        { label: "q_e", latex: "q_e", tooltip: "Elementary charge" },
+      ],
+    },
+  };
+
+  const contextInsert = useContext(MathInputContext);
+
+  const handleSelect = (latex: string) => {
+    if (onSelectSymbol) {
+      onSelectSymbol(latex);
+    } else if (contextInsert) {
+      contextInsert(latex);
+    }
   };
 
   return (
@@ -100,7 +130,7 @@ export default function MathPalette({ onSelectSymbol }: Props) {
           <button
             key={idx}
             type="button"
-            onClick={() => onSelectSymbol(item.latex)}
+            onClick={() => handleSelect(item.latex)}
             title={item.tooltip}
             className="flex h-9 items-center justify-center rounded-lg border border-outline-variant/40 bg-surface-container-lowest text-sm font-medium hover:border-primary hover:text-primary transition-all font-mono hover:scale-105 active:scale-95 shadow-sm"
           >

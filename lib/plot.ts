@@ -150,3 +150,48 @@ export function definiteIntegral(fn: (x: number) => number, a: number, b: number
   const signed = sum * dx;
   return a > b ? -signed : signed;
 }
+
+export function compileExpr3D(src: string): ((x: number, y: number) => number) | null {
+  if (!src || typeof src !== "string") return null;
+  let s = src.trim();
+  s = s.replace(/^\$+|\$+$/g, "").trim();
+  s = s.replace(/^f\s*\(\s*x\s*,\s*y\s*\)\s*=\s*/i, "").trim();
+  s = s.replace(/^z\s*=\s*/i, "").trim();
+  s = s.replace(/\\cdot/g, "*")
+       .replace(/\\times/g, "*")
+       .replace(/\\div/g, "/")
+       .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "(($1)/($2))")
+       .replace(/\\sqrt\{([^{}]+)\}/g, "sqrt($1)")
+       .replace(/\\([a-zA-Z]+)/g, "$1")
+       .replace(/\^/g, "**")
+       .replace(/π/g, "pi")
+       .replace(/[⋅·×]/g, "*");
+
+  const supMap: Record<string,string> = { "⁰":"0","¹":"1","²":"2","³":"3","⁴":"4","⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9" };
+  s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (c) => "**" + supMap[c]);
+  s = s.replace(/(\d)\s*([a-zA-Z_(])/g, "$1*$2");
+  s = s.replace(/\)\s*([a-zA-Z_(])/g, ")*$1");
+  s = s.replace(/([a-zA-Z_]\w*)\s*\(/g, (_m, name) => {
+    return FUNCS.has(name.toLowerCase()) ? `${name}(` : `${name}*(`;
+  });
+
+  s = s.replace(/\bln\b/g, "Math.log");
+  for (const f of FUNCS) {
+    if (f === "ln") continue;
+    s = s.replace(new RegExp(`\\b${f}\\b`, "g"), `Math.${f}`);
+  }
+  s = s.replace(/\bpi\b/g, "Math.PI").replace(/\be\b/g, "Math.E");
+  s = s.replace(/\*\*\s*\*\*/g, "**");
+
+  const stripped = s.replace(/Math\.[A-Za-z_]+/g, "M");
+  if (!/^[\dxMy+\-*/().\s]+$/.test(stripped)) return null;
+
+  try {
+    const fn = new Function("x", "y", `'use strict'; return (${s});`) as (x: number, y: number) => number;
+    const sample = fn(1, 1);
+    if (typeof sample !== "number") return null;
+    return fn;
+  } catch {
+    return null;
+  }
+}

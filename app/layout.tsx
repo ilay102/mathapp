@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import Sidebar from "@/components/Sidebar";
+import AppLayout from "@/components/AppLayout";
 
 export const metadata: Metadata = {
   title: "MathPad — handwrite, check, learn",
@@ -24,12 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="bg-background text-on-surface font-ui min-h-screen">
-        <div className="flex min-h-screen flex-col md:flex-row bg-[#f8f9fa]">
-          <Sidebar />
-          <div className="flex-1 overflow-x-hidden relative">
-            {children}
-          </div>
-        </div>
+        <AppLayout>
+          {children}
+        </AppLayout>
       </body>
     </html>
   );

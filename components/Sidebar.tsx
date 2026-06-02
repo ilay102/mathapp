@@ -161,6 +161,18 @@ export default function Sidebar() {
               <span className="material-symbols-outlined text-lg">assignment</span>
               <span>{isRtl ? "סימולטור מבחנים" : "Exam Simulator"}</span>
             </Link>
+            <Link
+              href="/tools"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                isActive("/tools")
+                  ? "bg-primary/10 text-primary"
+                  : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">construction</span>
+              <span>{isRtl ? "כלים הנדסיים" : "Engineering Tools"}</span>
+            </Link>
           </nav>
         </div>
 

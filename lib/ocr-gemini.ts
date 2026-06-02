@@ -52,7 +52,38 @@ async function callGemini(modelId: string, apiKey: string, pngBuffer: Buffer, mo
 
 function isOverloaded(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return /503|UNAVAILABLE|overloaded|high demand|429/i.test(msg);
+  return /503|UNAVAILABLE|overloaded|high demand|429|fetch failed|econnreset|timeout|hang up/i.test(msg);
+}
+
+
+function parseGeminiJsonLines(text: string): string[] {
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && Array.isArray(parsed.lines)) {
+      return parsed.lines.map((x: unknown) => String(x));
+    }
+  } catch (e) {
+    // Fall back to regex
+  }
+
+  // Regex fallback: extract strings from inside the "lines" array
+  const lines: string[] = [];
+  const arrayMatch = text.match(/"lines"\s*:\s*\[([\s\S]*?)\]/);
+  if (arrayMatch) {
+    const arrayContent = arrayMatch[1];
+    const stringRegex = /"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+    let match;
+    while ((match = stringRegex.exec(arrayContent)) !== null) {
+      let str = match[1];
+      // Manually unescape JSON strings
+      str = str
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\');
+      lines.push(str);
+    }
+    if (lines.length > 0) return lines;
+  }
+  return [];
 }
 
 export async function ocrViaGemini(pngBuffer: Buffer, mode: "answer" | "problem" = "answer"): Promise<{ lines: string[]; model: string }> {
@@ -61,8 +92,10 @@ export async function ocrViaGemini(pngBuffer: Buffer, mode: "answer" | "problem"
 
   const plan: { model: string; delayBefore: number }[] = [
     { model: PRIMARY_MODEL,  delayBefore: 0 },
-    { model: PRIMARY_MODEL,  delayBefore: 1500 },
-    { model: FALLBACK_MODEL, delayBefore: 0 },
+    { model: PRIMARY_MODEL,  delayBefore: 2000 },
+    { model: PRIMARY_MODEL,  delayBefore: 5000 },
+    { model: FALLBACK_MODEL, delayBefore: 2000 },
+    { model: FALLBACK_MODEL, delayBefore: 5000 },
   ];
 
   let lastErr: unknown;
@@ -82,14 +115,12 @@ export async function ocrViaGemini(pngBuffer: Buffer, mode: "answer" | "problem"
   }
   if (lastErr) throw lastErr;
 
-  let parsed: { lines?: unknown };
-  try { parsed = JSON.parse(text); } catch { parsed = { lines: [] }; }
-  const lines = Array.isArray(parsed.lines)
-    ? parsed.lines
-        .map((x) => String(x).trim())
-        .filter(Boolean)
-        // Strip stray markdown fences if the model still emits them
-        .map((l) => l.replace(/^```(?:latex|math)?|```$/g, "").trim())
-    : [];
+  const rawLines = parseGeminiJsonLines(text);
+  const lines = rawLines
+    .map((x) => String(x).trim())
+    .filter(Boolean)
+    // Strip stray markdown fences if the model still emits them
+    .map((l) => l.replace(/^```(?:latex|math)?|```$/g, "").trim());
   return { lines, model: usedModel };
 }
+

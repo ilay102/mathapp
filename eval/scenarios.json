@@ -1,0 +1,10 @@
+[
+  {"id":"s1-chain-correct","problem":"Differentiate f(x) = sin(x^2)","studentLines":["f'(x) = 2x cos(x^2)"]},
+  {"id":"s2-chain-missing","problem":"Differentiate f(x) = sin(x^2)","studentLines":["f'(x) = cos(x^2)"]},
+  {"id":"s3-quad-correct","problem":"Solve x^2 - 5x + 6 = 0","studentLines":["(x-2)(x-3)=0","x=2 or x=3"]},
+  {"id":"s4-quad-wrong-factor","problem":"Solve x^2 - 5x + 6 = 0","studentLines":["(x-1)(x-6)=0","x=1 or x=6"]},
+  {"id":"s5-int-wrong","problem":"Evaluate integral of 3x^2 dx","studentLines":["= 6x + C"]},
+  {"id":"s6-product-fixedup","problem":"Differentiate g(x) = x^2 * e^x","studentLines":["g'(x) = 2x e^x","g'(x) = 2x e^x + x^2 e^x"]},
+  {"id":"s7-limit-correct","problem":"Compute lim x->0 sin(x)/x","studentLines":["= 1"]},
+  {"id":"s8-linear-correct","problem":"Solve 2x + 3 = 11","studentLines":["2x = 8","x = 4"]}
+]

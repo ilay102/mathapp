@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@400;500;600;700&display=swap");
+
+html, body { height: 100%; overscroll-behavior: none; }
+body {
+  font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  background: #f8f9fa;
+  color: #191c1d;
+  touch-action: none;
+}
+canvas { touch-action: none; }
+
+/* Stitch helpers */
+.dot-pattern {
+  background-image: radial-gradient(circle at 1px 1px, #e1e3e4 1px, transparent 0);
+  background-size: 24px 24px;
+}
+/* Ruled notebook paper: horizontal lines + a red left margin line, like a school notebook */
+.ruled-paper {
+  background-color: #fffefb;
+  background-image:
+    linear-gradient(to right, transparent 0, transparent 56px, rgba(220,38,38,0.35) 56px, rgba(220,38,38,0.35) 57px, transparent 57px),
+    repeating-linear-gradient(to bottom, transparent 0, transparent 35px, rgba(96,165,250,0.30) 35px, rgba(96,165,250,0.30) 36px);
+  background-size: 100% 100%, 100% 36px;
+  background-position: 0 0, 0 8px;
+}
+.ruled-paper::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at top, rgba(0,0,0,0.04), transparent 60%),
+    linear-gradient(180deg, transparent 0, transparent 95%, rgba(0,0,0,0.05) 100%);
+}
+.handwritten { font-family: 'Caveat', cursive; }
+.note-title  { font-family: 'Newsreader', Georgia, serif; }
+
+/* AI-glow CTA: gradient border that signals AI assistance */
+.ai-glow {
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.18);
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, #003fd2, #8455ef 60%, #0EA5E9) border-box;
+  transition: box-shadow 200ms ease;
+}
+.ai-glow:hover { box-shadow: 0 0 36px rgba(139, 92, 246, 0.32); }
+.ai-glow:disabled { opacity: 0.55; box-shadow: none; cursor: not-allowed; }
+
+/* Glassmorphism for the AI Note callout */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(196, 197, 216, 0.55);
+}
+
+/* Highlighter underline for marking the wrong step */
+.error-mark {
+  position: relative;
+  display: inline-block;
+}
+.error-mark::after {
+  content: "";
+  position: absolute;
+  left: -2px; right: -2px; bottom: 1px;
+  height: 10px;
+  background: rgba(255, 218, 214, 0.85); /* error-container */
+  transform: rotate(-1deg);
+  z-index: -1;
+  mix-blend-mode: multiply;
+  border-radius: 2px;
+}

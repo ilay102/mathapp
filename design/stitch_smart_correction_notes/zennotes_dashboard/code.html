@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZenNotes - Digital Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Newsreader:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e1e3e4",
+                        "outline-variant": "#c4c5d8",
+                        "on-tertiary-fixed-variant": "#004c6e",
+                        "inverse-primary": "#b8c4ff",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "surface-dim": "#d9dadb",
+                        "inverse-on-surface": "#f0f1f2",
+                        "primary-container": "#2d5af0",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#23005c",
+                        "outline": "#747687",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "on-tertiary-container": "#d7ecff",
+                        "on-surface-variant": "#434655",
+                        "surface-bright": "#f8f9fa",
+                        "secondary": "#6b38d4",
+                        "on-surface": "#191c1d",
+                        "on-secondary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "on-tertiary-fixed": "#001e2f",
+                        "surface-variant": "#e1e3e4",
+                        "on-primary-container": "#e7e8ff",
+                        "secondary-fixed": "#e9ddff",
+                        "secondary-container": "#8455ef",
+                        "surface-container": "#edeeef",
+                        "tertiary": "#00567d",
+                        "on-background": "#191c1d",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#dde1ff",
+                        "tertiary-fixed": "#c9e6ff",
+                        "surface-tint": "#1b4ee5",
+                        "surface": "#f8f9fa",
+                        "on-secondary": "#ffffff",
+                        "primary": "#003fd2",
+                        "tertiary-container": "#0070a0",
+                        "on-primary-fixed": "#001453",
+                        "on-primary-fixed-variant": "#0037b9",
+                        "tertiary-fixed-dim": "#89ceff",
+                        "primary-fixed-dim": "#b8c4ff",
+                        "inverse-surface": "#2e3132",
+                        "surface-container-high": "#e7e8e9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "24px",
+                        "canvas-padding": "40px",
+                        "sidebar-width": "280px",
+                        "gutter": "16px",
+                        "toolbar-gap": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "note-title-lg": ["Newsreader"],
+                        "label-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "note-title-lg": ["24px", {"lineHeight": "30px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .notebook-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .notebook-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); }
+        .binding-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: theme('borderRadius.lg') 0 0 theme('borderRadius.lg'); }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-on-surface antialiased">
+<!-- SideNavBar Component -->
+<nav class="hidden md:flex flex-col p-container-margin gap-6 bg-surface-container-lowest border-r border-outline-variant fixed left-0 top-0 h-screen w-sidebar z-20">
+<!-- Header -->
+<div class="flex items-center gap-3 px-2 pt-2">
+<div class="w-10 h-10 rounded-full bg-primary-container text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined fill">menu_book</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary truncate text-[20px] leading-[24px]">ZenNotes</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Digital Zen Workspace</p>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full py-3 px-4 rounded-full bg-primary text-on-primary font-label-sm text-label-sm font-semibold flex items-center justify-center gap-2 hover:bg-surface-tint transition-colors duration-200 shadow-sm mt-4 scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            New Notebook
+        </button>
+<!-- Navigation Tabs -->
+<div class="flex-1 flex flex-col gap-1 mt-6">
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-primary-container/10 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined fill">description</span>
+<span class="font-body-md text-body-md font-medium">All Notes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200 scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="font-body-md text-body-md">Favorites</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200 scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-body-md text-body-md">Shared</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200 scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-body-md text-body-md">Folders</span>
+</a>
+</div>
+<!-- Footer Tabs -->
+<div class="flex flex-col gap-1 mt-auto border-t border-outline-variant pt-4">
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200 scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-body-md text-body-md text-[14px]">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200 scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+<span class="font-body-md text-body-md text-[14px]">Support</span>
+</a>
+<!-- User Profile Snippet -->
+<div class="mt-4 flex items-center gap-3 px-2 pt-2 pb-1">
+<img alt="User profile" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A close-up, soft-focus portrait of a young professional woman in a bright, modern, minimalist setting. Soft, natural light illuminates her face. The visual style is light-mode, using a palette of soft whites and neutral tones, emphasizing a clean, corporate modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK1gFLqElpQLndYVhHIAkm08UHIx1Zj154ZCHq2L3hkoxaNKgVRTQoa_lBfEFjmxfVsl-HnNaEITtiGV9R1X9i9zBbtMO5nP1HvbSxjz8om1HCIFshadzgzGHxsSALQ5RD2MbmETtCPbpv-ei5Mb04sWhEGryXOTEK63STNQII_KbaJ-v1HWDg_I15Y1a8XMtDqJJx3dEe2msTgjYm9pdvcLdAz0ig1HLt2lYtxr6d0AP_mpnqhHqD80Pj1kGYDQ83lvoiokvJDIA"/>
+<div class="flex-1 min-w-0">
+<p class="font-label-sm text-label-sm font-semibold truncate">Jane Doe</p>
+<p class="text-[10px] text-on-surface-variant truncate">Free Plan</p>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Canvas Area -->
+<main class="flex-1 flex flex-col md:ml-[280px] w-full h-full relative overflow-y-auto bg-background">
+<!-- Top Search/Filter Bar (Not TopAppBar component, just canvas header) -->
+<header class="sticky top-0 z-10 glass-panel border-b border-outline-variant px-canvas-padding py-4 flex justify-between items-center h-16">
+<h2 class="font-headline-lg text-headline-lg text-[22px] md:text-[28px] font-semibold text-on-surface hidden md:block">Library</h2>
+<!-- Mobile Menu Toggle -->
+<button class="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex-1 md:max-w-md mx-4 md:ml-8 relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary border-t-0 border-x-0 rounded-t-md pl-10 pr-4 py-2 font-body-md text-body-md focus:ring-0 transition-colors bg-opacity-80" placeholder="Search notebooks..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+</header>
+<div class="p-4 md:p-canvas-padding max-w-7xl mx-auto w-full pb-24">
+<!-- Recent Section -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-body-md text-body-md font-semibold text-on-surface-variant uppercase tracking-wider text-[13px]">Recently Opened</h3>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter md:gap-6">
+<!-- Recent Notebook 1 -->
+<div class="group cursor-pointer">
+<div class="relative aspect-[3/4] rounded-lg overflow-hidden border border-outline-variant notebook-card bg-surface-container-lowest">
+<div class="binding-strip bg-secondary"></div>
+<div class="absolute inset-0 bg-gradient-to-br from-surface-container-lowest to-surface-container-low opacity-50"></div>
+<!-- Cover Texture/Image -->
+<div class="absolute inset-0 ml-1.5 opacity-10 bg-[radial-gradient(#c4c5d8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+<div class="absolute inset-0 flex flex-col p-4 ml-2">
+<div class="flex-1"></div>
+<div class="bg-surface-container-lowest/90 backdrop-blur-sm p-3 rounded border border-outline-variant">
+<h4 class="font-note-title-lg text-note-title-lg text-[18px] leading-tight text-on-surface truncate">Chemistry 101</h4>
+</div>
+</div>
+</div>
+<div class="mt-3 px-1">
+<p class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> 2 hours ago</p>
+</div>
+</div>
+<!-- Recent Notebook 2 -->
+<div class="group cursor-pointer">
+<div class="relative aspect-[3/4] rounded-lg overflow-hidden border border-outline-variant notebook-card bg-[#2e3132]">
+<div class="binding-strip bg-primary"></div>
+<!-- Leather texture representation -->
+<div class="absolute inset-0 ml-1.5 opacity-20" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px);"></div>
+<div class="absolute top-4 right-4 text-on-primary">
+<span class="material-symbols-outlined fill text-[20px]">star</span>
+</div>
+<div class="absolute inset-0 flex flex-col justify-center items-center p-4 ml-2">
+<div class="w-full text-center border-y border-outline-variant/30 py-4">
+<h4 class="font-note-title-lg text-note-title-lg text-[20px] text-on-primary">Daily Journal</h4>
+<p class="font-label-sm text-label-sm text-on-primary/70 mt-1">2024</p>
+</div>
+</div>
+</div>
+<div class="mt-3 px-1">
+<p class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> Yesterday</p>
+</div>
+</div>
+</div>
+</section>
+<!-- All Notebooks Section (Bento Grid Style) -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-body-md text-body-md font-semibold text-on-surface-variant uppercase tracking-wider text-[13px]">Your Library</h3>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-surface-container-high font-label-sm text-label-sm text-on-surface">All</span>
+<span class="px-3 py-1 rounded-full bg-transparent hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant cursor-pointer">Work</span>
+<span class="px-3 py-1 rounded-full bg-transparent hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant cursor-pointer">Personal</span>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-gutter md:gap-6">
+<!-- Notebook 3 -->
+<div class="group cursor-pointer">
+<div class="relative aspect-[3/4] rounded-lg overflow-hidden border border-outline-variant notebook-card bg-surface-container-low">
+<div class="binding-strip bg-tertiary"></div>
+<img alt="Abstract gradient background" class="absolute inset-0 w-full h-full object-cover ml-1.5 opacity-60 mix-blend-multiply" data-alt="A smooth, minimal abstract gradient blending soft pastel blues and cool grays. The lighting is diffused and even, creating a serene, modern light-mode aesthetic suitable for a digital notebook cover. High quality, clean composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBylWh6DHF-02i8aD7HvEjE0tsT6EvUkVpHvjpRNXgfAowyLedPr7qC2OlPQkvlzBx5jPxNbTKRZXD-00lJRGZyvZL3FR3jnGr8Vekxd3v8E9VIzATHuAxBO0gz61r2j2lHi0ImgXY19_oNV1WRwsN5WQUvGBVovm-dFqumNRyyH5WFos5GpqYqVKn4cqYB6rpTrNotF88lKaS9HCPbJdr5CHqU76E7ntAcJlK42HbubhY7CNy4cyE8BHJxV11Vnf0j-_UPV0z6Slw"/>
+<div class="absolute bottom-4 left-4 right-4 ml-2">
+<h4 class="font-note-title-lg text-note-title-lg text-[18px] text-on-surface bg-surface-container-lowest/80 backdrop-blur-md px-2 py-1 rounded inline-block">Startup Ideas</h4>
+</div>
+</div>
+<div class="mt-3 flex justify-between items-center px-1">
+<span class="px-2 py-0.5 rounded bg-primary-container/20 text-primary font-label-sm text-label-sm text-[10px]">Work</span>
+<span class="material-symbols-outlined text-outline-variant text-[16px]">more_horiz</span>
+</div>
+</div>
+<!-- Add New Card (Dashed) -->
+<div class="group cursor-pointer flex flex-col h-full">
+<div class="relative aspect-[3/4] rounded-lg border-2 border-dashed border-outline-variant bg-transparent hover:bg-surface-container-low hover:border-primary transition-colors flex items-center justify-center">
+<div class="flex flex-col items-center text-on-surface-variant group-hover:text-primary">
+<span class="material-symbols-outlined text-[32px] mb-2">add_circle</span>
+<span class="font-body-md text-body-md font-medium">Blank Notebook</span>
+</div>
+</div>
+<div class="mt-3 px-1 opacity-0">Spacer</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar for Mobile (Hidden on MD+) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant flex justify-around items-center px-4 z-20 pb-safe">
+<a class="flex flex-col items-center gap-1 text-primary w-16" href="#">
+<div class="px-4 py-1 rounded-full bg-primary-container/20">
+<span class="material-symbols-outlined fill">description</span>
+</div>
+<span class="font-label-sm text-label-sm text-[10px]">Notes</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary w-16" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="font-label-sm text-label-sm text-[10px]">Favs</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary w-16" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-sm text-label-sm text-[10px]">Search</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary w-16" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-label-sm text-label-sm text-[10px]">Folders</span>
+</a>
+</div>
+</body></html>

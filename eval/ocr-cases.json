@@ -1,0 +1,14 @@
+[
+  {
+    "id": "chain-rule-correct",
+    "png": "handwriting_correct.png",
+    "problem": "Differentiate f(x) = sin(x^2)",
+    "expectedStatus": "correct"
+  },
+  {
+    "id": "chain-rule-wrong",
+    "png": "handwriting_wrong.png",
+    "problem": "Differentiate f(x) = sin(x^2)",
+    "expectedStatus": "wrong"
+  }
+]

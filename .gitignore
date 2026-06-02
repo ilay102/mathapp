@@ -1,0 +1,41 @@
+# dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# next
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+# env (NEVER commit secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# OCR sidecar — local Python venv + downloaded models
+ocr-service/.venv
+ocr-service/sidecar.log
+ocr-service/sidecar.err
+ocr-service/__pycache__
+
+# eval artifacts
+eval/last-run.json
+eval/images/
+
+# logs / IDE
+*.log
+.DS_Store
+.idea
+.vscode
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

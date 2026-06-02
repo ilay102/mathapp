@@ -1,0 +1,112 @@
+[
+  {
+    "id": "calc1-chain-1",
+    "problem": "Differentiate f(x) = sin(x^2)",
+    "studentLines": ["f'(x) = cos(x^2) * 2x"],
+    "expected": { "status": "correct" }
+  },
+  {
+    "id": "calc1-chain-2-wrong",
+    "problem": "Differentiate f(x) = sin(x^2)",
+    "studentLines": ["f'(x) = cos(x^2)"],
+    "expected": { "status": "wrong", "firstErrorLineIndex": 0, "errorType": "calculus" }
+  },
+  {
+    "id": "calc1-product",
+    "problem": "Differentiate g(x) = x^2 * e^x",
+    "studentLines": ["g'(x) = 2x * e^x + x^2 * e^x"],
+    "expected": { "status": "correct" }
+  },
+  {
+    "id": "calc1-product-wrong",
+    "problem": "Differentiate g(x) = x^2 * e^x",
+    "studentLines": ["g'(x) = 2x * e^x"],
+    "expected": { "status": "wrong", "firstErrorLineIndex": 0 }
+  },
+  {
+    "id": "algebra-quad",
+    "problem": "Solve x^2 - 5x + 6 = 0",
+    "studentLines": [
+      "(x - 2)(x - 3) = 0",
+      "x = 2 or x = 3"
+    ],
+    "expected": { "status": "correct" }
+  },
+  {
+    "id": "algebra-quad-wrong-factor",
+    "problem": "Solve x^2 - 5x + 6 = 0",
+    "studentLines": [
+      "(x - 1)(x - 6) = 0",
+      "x = 1 or x = 6"
+    ],
+    "expected": { "status": "wrong", "firstErrorLineIndex": 0, "errorType": "algebra" }
+  },
+  {
+    "id": "calc-integral-basic",
+    "problem": "Evaluate the integral of 3x^2 dx",
+    "studentLines": ["= x^3 + C"],
+    "expected": { "status": "correct" }
+  },
+  {
+    "id": "calc-integral-wrong-coef",
+    "problem": "Evaluate the integral of 3x^2 dx",
+    "studentLines": ["= 6x + C"],
+    "expected": { "status": "wrong", "firstErrorLineIndex": 0, "errorType": "calculus" }
+  },
+  {
+    "id": "linalg-det-2x2",
+    "problem": "Compute det([[2, 1], [3, 4]])",
+    "studentLines": ["det = 2*4 - 1*3 = 8 - 3 = 5"],
+    "expected": { "status": "correct" }
+  },
+  {
+    "id": "linalg-det-2x2-wrong",
+    "problem": "Compute det([[2, 1], [3, 4]])",
+    "studentLines": ["det = 2*4 + 1*3 = 11"],
+    "expected": { "status": "wrong", "firstErrorLineIndex": 0 }
+  },
+  {
+    "id": "diffeq-separable",
+    "problem": "Solve dy/dx = y, y(0) = 1",
+    "studentLines": [
+      "dy/y = dx",
+      "ln|y| = x + C",
+      "y = e^(x + C) = A e^x",
+      "y(0) = 1 => A = 1",
+      "y = e^x"
+    ],
+    "expected": { "status": "correct" }
+  },
+  {
+    "id": "diffeq-separable-wrong",
+    "problem": "Solve dy/dx = y, y(0) = 1",
+    "studentLines": [
+      "dy/y = dx",
+      "ln|y| = x + C",
+      "y = x + A",
+      "y = x + 1"
+    ],
+    "expected": { "status": "wrong", "firstErrorLineIndex": 2 }
+  },
+  {
+    "id": "calc-limit",
+    "problem": "Evaluate lim x->0 of sin(x)/x",
+    "studentLines": ["= 1"],
+    "expected": { "status": "correct" }
+  },
+  {
+    "id": "calc-limit-wrong",
+    "problem": "Evaluate lim x->0 of sin(x)/x",
+    "studentLines": ["= 0"],
+    "expected": { "status": "wrong", "firstErrorLineIndex": 0 }
+  },
+  {
+    "id": "algebra-multistep-correct-alt-method",
+    "problem": "Solve 2x + 3 = 11",
+    "studentLines": [
+      "2x = 8",
+      "x = 4"
+    ],
+    "expected": { "status": "correct" }
+  }
+]

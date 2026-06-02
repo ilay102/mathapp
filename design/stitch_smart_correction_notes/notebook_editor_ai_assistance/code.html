@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZenNotes - Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Newsreader:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error-container": "#ffdad6",
+                      "surface-container-highest": "#e1e3e4",
+                      "outline-variant": "#c4c5d8",
+                      "on-tertiary-fixed-variant": "#004c6e",
+                      "inverse-primary": "#b8c4ff",
+                      "secondary-fixed-dim": "#d0bcff",
+                      "surface-dim": "#d9dadb",
+                      "inverse-on-surface": "#f0f1f2",
+                      "primary-container": "#2d5af0",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed": "#23005c",
+                      "outline": "#747687",
+                      "on-error-container": "#93000a",
+                      "on-tertiary": "#ffffff",
+                      "background": "#f8f9fa",
+                      "surface-container-low": "#f3f4f5",
+                      "on-tertiary-container": "#d7ecff",
+                      "on-surface-variant": "#434655",
+                      "surface-bright": "#f8f9fa",
+                      "secondary": "#6b38d4",
+                      "on-surface": "#191c1d",
+                      "on-secondary-container": "#fffbff",
+                      "on-secondary-fixed-variant": "#5516be",
+                      "on-tertiary-fixed": "#001e2f",
+                      "surface-variant": "#e1e3e4",
+                      "on-primary-container": "#e7e8ff",
+                      "secondary-fixed": "#e9ddff",
+                      "secondary-container": "#8455ef",
+                      "surface-container": "#edeeef",
+                      "tertiary": "#00567d",
+                      "on-background": "#191c1d",
+                      "error": "#ba1a1a",
+                      "primary-fixed": "#dde1ff",
+                      "tertiary-fixed": "#c9e6ff",
+                      "surface-tint": "#1b4ee5",
+                      "surface": "#f8f9fa",
+                      "on-secondary": "#ffffff",
+                      "primary": "#003fd2",
+                      "tertiary-container": "#0070a0",
+                      "on-primary-fixed": "#001453",
+                      "on-primary-fixed-variant": "#0037b9",
+                      "tertiary-fixed-dim": "#89ceff",
+                      "primary-fixed-dim": "#b8c4ff",
+                      "inverse-surface": "#2e3132",
+                      "surface-container-high": "#e7e8e9",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-margin": "24px",
+                      "canvas-padding": "40px",
+                      "sidebar-width": "280px",
+                      "gutter": "16px",
+                      "toolbar-gap": "8px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "display-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "note-title-lg": [
+                              "Newsreader"
+                      ],
+                      "label-sm": [
+                              "Hanken Grotesk"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "note-title-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "30px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        .dot-pattern {
+            background-image: radial-gradient(circle at 1px 1px, #e1e3e4 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+        .ai-glow {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+            border: 1px solid transparent;
+            background: linear-gradient(to right, #ffffff, #ffffff) padding-box,
+                        linear-gradient(45deg, #003fd2, #8455ef) border-box;
+        }
+        .ai-glow:hover {
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.25);
+        }
+        .handwritten {
+            font-family: 'Caveat', cursive; /* Fallback for visual representation */
+        }
+        
+        /* Glassmorphism for AI panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+<!-- Adding a cursive font for the handwritten math notes simulation -->
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex font-body-md">
+<!-- SideNavBar (from JSON) -->
+<nav class="hidden md:flex flex-col p-container-margin gap-6 bg-surface-container-lowest border-r border-outline-variant fixed left-0 top-0 h-screen w-sidebar z-20">
+<!-- Brand/Header -->
+<div class="flex items-center gap-4 mb-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-primary flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary">ZenNotes</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Digital Zen Workspace</p>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full py-3 px-4 bg-primary text-on-primary rounded-lg font-label-sm text-label-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+<span class="material-symbols-outlined">add</span>
+            New Notebook
+        </button>
+<!-- Main Nav -->
+<div class="flex flex-col gap-2 mt-4 flex-grow">
+<!-- Active state for All Notes to represent editor context -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-primary-container/10 transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="font-label-sm text-label-sm">All Notes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="font-label-sm text-label-sm">Favorites</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-sm text-label-sm">Shared</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-label-sm text-label-sm">Folders</span>
+</a>
+</div>
+<!-- Footer Nav -->
+<div class="flex flex-col gap-2 mt-auto pt-4 border-t border-outline-variant/30">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-label-sm text-label-sm">Support</span>
+</a>
+<div class="mt-4 flex items-center gap-3 px-4 py-2">
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="A small, circular avatar portrait of a young professional woman with natural lighting and a neutral background, styled clean and minimalistic to fit a modern workspace UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDatmMyoUvjmtdBzHED9GXtych5_eDy6nUkZAu0VDZDwNLLS-6AZlM8buRCYjTR5yCvYC0UNyTmhgSl_js9VgMTEX1ZJnjfckJHAo4LedLIciFMze0svijbjebfVFKIwNwgrlWwnPzBylueJwSzGwRfd16myG2Kyb-QwPzumzuNGW1GjNuL4LEaxn6AF7xbIzGyn22SftYCHGx9ydKhKBmziR4kaqR7pgGTysgN-nSha7U9AgRE6NZc1GmV47J-yM8-F6geK2VbMb4"/>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Alex Rivera</span>
+</div>
+</div>
+</nav>
+<!-- Main Workspace Area -->
+<main class="flex-1 flex flex-col relative md:ml-[280px] h-screen bg-background">
+<!-- TopAppBar (from JSON) -->
+<header class="flex justify-between items-center px-canvas-padding w-full max-w-full gap-toolbar-gap bg-surface docked full-width top-0 h-16 border-b border-outline-variant z-10 shrink-0">
+<!-- Left: Mobile Menu & Title -->
+<div class="flex items-center gap-4">
+<button class="md:hidden text-on-surface-variant hover:bg-surface-container-high rounded-full p-2 transition-all">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex flex-col">
+<h2 class="font-note-title-lg text-note-title-lg font-semibold text-on-surface">My Notebook</h2>
+<span class="text-xs text-outline font-label-sm">Calculus 101 - Last edited 2m ago</span>
+</div>
+</div>
+<!-- Center: Toolbar Tools -->
+<div class="hidden sm:flex items-center gap-toolbar-gap bg-surface-container-low rounded-full px-2 py-1 border border-outline-variant">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all" title="history_edu">
+<span class="material-symbols-outlined">history_edu</span>
+</button>
+<button class="p-2 bg-primary text-on-primary rounded-full shadow-sm" title="highlighter">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">ink_highlighter</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all" title="ink_eraser">
+<span class="material-symbols-outlined">ink_eraser</span>
+</button>
+<div class="w-px h-6 bg-outline-variant mx-1"></div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all" title="shapes">
+<span class="material-symbols-outlined">shapes</span>
+</button>
+<button class="p-2 text-secondary hover:bg-secondary-fixed rounded-full transition-all group relative" title="auto_fix_high">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">auto_fix_high</span>
+<!-- Subtle violet glow indication -->
+<span class="absolute inset-0 rounded-full bg-secondary opacity-0 group-hover:opacity-20 blur-md transition-opacity"></span>
+</button>
+</div>
+<!-- Right: Actions & Profile -->
+<div class="flex items-center gap-4">
+<div class="hidden md:flex relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="pl-9 pr-4 py-1.5 bg-surface-container-lowest border-b border-outline-variant focus:border-primary focus:outline-none focus:ring-0 text-sm font-label-sm w-48 transition-colors" placeholder="Search notes..." type="text"/>
+</div>
+<button class="bg-primary-container text-on-primary-container font-label-sm text-label-sm px-4 py-2 rounded-full hover:bg-primary/20 transition-colors">
+                    Share
+                </button>
+<button class="p-1 rounded-full border border-outline-variant hover:bg-surface-container-high transition-colors">
+<img alt="User avatar" class="w-8 h-8 rounded-full" data-alt="A small, circular avatar portrait of a young professional woman with natural lighting and a neutral background, styled clean and minimalistic to fit a modern workspace UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD55LCVz2uT5mp-PaVoDv3T2q_nsFdQCbOgKob7jlTXuWk6AvnQKy2nq-gCvolp5Gt8eVAOwS6wNO9ZC_iUefR4CgSHw7YlsXKuuQDxQM5woXmo3mhMFKhxl1geXsKMwxWDA3_NPd2lZoP-E161AXoQYAXjSuWuQrfqfoTd0VvAHV92n43m_vhFMTnLD2tsREb-0UouMf-VfAtghlKKmEEZ-fx_R7kV0Xl91lefCy0hLOT9skCpbKC9mySp7F0242-gEh0MZOzJFgo"/>
+</button>
+</div>
+</header>
+<!-- Canvas Area -->
+<div class="flex-1 overflow-auto relative">
+<!-- The Digital Paper Canvas -->
+<div class="min-h-[1200px] w-full max-w-[900px] mx-auto my-8 bg-surface-container-lowest dot-pattern shadow-sm rounded-lg border border-outline-variant/50 relative">
+<!-- Notebook Binding detail -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary-container rounded-l-lg opacity-80"></div>
+<!-- Canvas Content -->
+<div class="p-12 relative h-full">
+<!-- Date/Title -->
+<div class="mb-12">
+<div class="text-outline font-label-sm mb-2">October 24, 2023</div>
+<h1 class="font-note-title-lg text-4xl font-semibold text-on-surface border-b border-outline-variant pb-2 inline-block">Derivatives Practice</h1>
+</div>
+<!-- Simulated Handwritten Math Notes -->
+<div class="space-y-16 mt-8 relative">
+<!-- Example 1 -->
+<div class="relative group">
+<div class="text-xl font-body-md text-on-surface-variant font-medium">1. Find the derivative of f(x) = x³ + 4x² - 2x + 5</div>
+<div class="mt-4 pl-4 handwritten text-2xl text-on-surface">
+<p>f'(x) = d/dx (x³) + d/dx (4x²) - d/dx (2x) + d/dx (5)</p>
+<p class="mt-2">f'(x) = 3x² + 8x - 2 + 0</p>
+<p class="mt-2 text-primary font-bold">f'(x) = 3x² + 8x - 2</p>
+</div>
+<!-- Checkmark annotation -->
+<div class="absolute top-10 -right-8 text-secondary-container opacity-80">
+<span class="material-symbols-outlined text-4xl">check</span>
+</div>
+</div>
+<!-- Example 2 (With Error and AI Correction) -->
+<div class="relative group mt-16 p-4 -ml-4 rounded-xl transition-colors hover:bg-surface-container-lowest">
+<div class="text-xl font-body-md text-on-surface-variant font-medium">2. Use the chain rule for g(x) = sin(x²)</div>
+<div class="mt-4 pl-4 handwritten text-2xl text-on-surface relative">
+<p>g'(x) = cos(x²) · d/dx(x²)</p>
+<!-- The Error Area -->
+<div class="relative inline-block mt-2">
+<span class="relative z-10 text-error">g'(x) = cos(x²) · x</span>
+<!-- Error Highlight (Highlighter effect) -->
+<div class="absolute bottom-0 left-0 w-full h-3 bg-error-container/60 -rotate-1 z-0 mix-blend-multiply"></div>
+</div>
+<!-- AI Correction Callout (Blue/Violet) -->
+<div class="absolute top-8 left-64 flex items-start gap-3">
+<svg class="w-12 h-12 text-secondary-container opacity-50" fill="none" viewbox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<path d="M10 10 Q 50 10, 80 50" stroke="currentColor" stroke-dasharray="4 4" stroke-linecap="round" stroke-width="2"></path>
+<path d="M70 45 L 80 50 L 75 60" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<div class="bg-secondary-fixed/50 backdrop-blur-sm border border-secondary/20 rounded-lg p-3 shadow-sm max-w-[200px]">
+<div class="flex items-center gap-1 mb-1 text-secondary font-semibold text-sm">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+<span>AI Note</span>
+</div>
+<p class="font-body-md text-sm text-on-surface-variant">Don't forget the power rule: d/dx(x²) = <span class="font-bold text-secondary">2x</span>, not just x.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Helper Floating Action Button / Panel Trigger -->
+<div class="fixed right-8 bottom-8 z-30 flex flex-col items-end gap-4">
+<!-- Floating AI Panel (Contextually visible) -->
+<div class="glass-panel w-80 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-outline-variant/30 overflow-hidden transform transition-all duration-300 translate-y-0 opacity-100">
+<div class="bg-surface-container-lowest/80 p-4 border-b border-outline-variant/30 flex justify-between items-center">
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined">auto_fix_high</span>
+<span class="font-label-sm font-bold text-sm tracking-wide">LUMEN ASSISTANT</span>
+</div>
+<button class="text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<div class="p-5 flex flex-col gap-4 bg-surface-container-lowest/40 backdrop-blur-md">
+<p class="font-body-md text-sm text-on-surface-variant">I noticed a potential error in equation #2 regarding the chain rule application.</p>
+<!-- Primary AI Action Button -->
+<button class="ai-glow w-full py-3 px-4 rounded-lg text-secondary font-bold text-sm flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined">plagiarism</span>
+                            Show Where I Went Wrong
+                        </button>
+<div class="flex gap-2 mt-2">
+<button class="flex-1 py-2 px-3 bg-surface-container text-on-surface-variant rounded-lg font-label-sm text-xs text-center hover:bg-surface-container-high transition-colors">
+                                Generate Similar
+                            </button>
+<button class="flex-1 py-2 px-3 bg-surface-container text-on-surface-variant rounded-lg font-label-sm text-xs text-center hover:bg-surface-container-high transition-colors">
+                                Explain Rule
+                            </button>
+</div>
+</div>
+</div>
+<!-- FAB trigger (if panel was closed) -->
+<!-- Hidden by default in this state, shown here for structure -->
+<button class="w-14 h-14 rounded-full bg-surface-container-lowest border border-outline-variant shadow-lg flex items-center justify-center text-secondary hover:bg-secondary-fixed transition-colors hidden">
+<span class="material-symbols-outlined text-2xl">auto_awesome</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>

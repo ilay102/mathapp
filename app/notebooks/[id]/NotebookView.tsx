@@ -1,30 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createPage, updateNotebook } from "@/lib/dataService";
+import { createPage, getPages, updateNotebook } from "@/lib/dataService";
 import type { DbNotebook, DbPage } from "@/lib/dataService";
 import { loadLang, type Lang } from "@/lib/i18n";
+import NotebookSection from "@/components/NotebookSection";
+import FormulaSheet from "@/components/FormulaSheet";
 
 type Props = {
   notebook: DbNotebook;
   pages: DbPage[];
 };
 
-export default function NotebookView({ notebook, pages }: Props) {
-  const router = useRouter();
+/**
+ * Continuous-paper notebook view.
+ *
+ * One scrollable sheet of paper holds every problem in the notebook, stacked
+ * vertically. Students can keep working — finish one, scroll down, start the
+ * next. "+ Add another problem" appends a new section to the same sheet.
+ *
+ * Layout:
+ *   - Left aside: jump list of problems (click → scroll to that section)
+ *   - Top: sticky frosted-glass strip with notebook title, formulas, "+ Add"
+ *   - Main: full-bleed ruled paper, sections inside a max-w-5xl column
+ */
+export default function NotebookView({ notebook, pages: initialPages }: Props) {
+  const [pages, setPages] = useState<DbPage[]>(initialPages);
   const [creating, setCreating] = useState(false);
   const [lang, setLang] = useState<Lang>("en");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(notebook.title);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [formulaOpen, setFormulaOpen] = useState(false);
 
   useEffect(() => {
     setLang(loadLang());
   }, []);
 
-  async function handleRename() {
+  const refreshPages = useCallback(async () => {
+    try {
+      const pgs = await getPages(notebook.id);
+      setPages(pgs);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [notebook.id]);
+
+  const handleRename = useCallback(async () => {
     if (!editedTitle.trim() || editedTitle === notebook.title) {
       setIsEditingTitle(false);
       return;
@@ -36,12 +58,12 @@ export default function NotebookView({ notebook, pages }: Props) {
     } catch (e) {
       console.error(e);
     }
-  }
+  }, [editedTitle, notebook.id, notebook.title]);
 
-  async function newPage() {
+  const handleAddProblem = useCallback(async () => {
     setCreating(true);
     try {
-      const page = await createPage(notebook.id, "", null, [
+      const newPg = await createPage(notebook.id, "", null, [
         {
           id: Math.random().toString(36).slice(2, 10),
           label: "",
@@ -52,239 +74,218 @@ export default function NotebookView({ notebook, pages }: Props) {
           strokes: null,
         },
       ]);
-      router.push(`/notebooks/${notebook.id}/${page.id}`);
-    } catch (err) {
-      console.error(err);
+      await refreshPages();
+      // Smooth scroll to the new section
+      requestAnimationFrame(() => {
+        document
+          .getElementById(`problem-${newPg.id}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } catch (e) {
+      console.error(e);
     } finally {
       setCreating(false);
     }
-  }
+  }, [notebook.id, refreshPages]);
+
+  // Ctrl+N to add a new problem
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === "n") {
+        e.preventDefault();
+        handleAddProblem();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleAddProblem]);
+
+  // Toggle-formulas event from sidebar/header
+  useEffect(() => {
+    const handler = () => setFormulaOpen((p) => !p);
+    document.addEventListener("toggle-formulas", handler);
+    return () => document.removeEventListener("toggle-formulas", handler);
+  }, []);
+
+  const handleInsertFormula = (latex: string) => {
+    if (typeof window !== "undefined" && (window as unknown as { insertMathCallback?: (s: string) => void }).insertMathCallback) {
+      (window as unknown as { insertMathCallback: (s: string) => void }).insertMathCallback(latex);
+    }
+  };
 
   const isRtl = lang === "he";
 
-  // Calculate stats
-  const pageStatuses = pages.map((p) => {
-    const strokesData = p.strokes;
-    if (!strokesData || !strokesData.parts || strokesData.parts.length === 0) {
-      return "unchecked";
-    }
-    const parts = strokesData.parts;
-    let hasMistake = false;
-    let hasIncomplete = false;
-    let hasCorrect = false;
-    let hasUnchecked = false;
-
-    for (const part of parts) {
-      const r = part.lastResult;
-      if (!r) {
-        hasUnchecked = true;
-      } else if (r.status === "wrong") {
-        hasMistake = true;
-      } else if (r.status === "incomplete") {
-        hasIncomplete = true;
-      } else if (r.status === "correct") {
-        hasCorrect = true;
-      }
-    }
-
-    if (hasMistake) return "mistake";
-    if (hasIncomplete) return "incomplete";
-    if (hasUnchecked) return "in-progress";
-    if (hasCorrect) return "correct";
-    return "unchecked";
-  });
-
-  const totalPages = pages.length;
-  const correctPages = pageStatuses.filter((s) => s === "correct").length;
-  const mistakePages = pageStatuses.filter((s) => s === "mistake").length;
-  const inProgressPages = pageStatuses.filter(
-    (s) => s === "in-progress" || s === "incomplete"
-  ).length;
-
-  const filteredPages = pages.filter((p) =>
-    p.problem.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
-    <main
-      dir={isRtl ? "rtl" : "ltr"}
-      className="mx-auto max-w-5xl p-6 sm:p-10 space-y-6 min-h-screen pb-24 animate-fade-in"
-    >
-      {/* Back navigation */}
-      <Link
-        href="/notebooks"
-        className="inline-flex items-center gap-1 text-xs text-on-surface-variant hover:text-primary transition-colors font-bold"
-      >
-        <span className="material-symbols-outlined text-sm font-bold">
-          {isRtl ? "arrow_forward" : "arrow_back"}
-        </span>
-        <span>{isRtl ? "כל המחברות" : "All Notebooks"}</span>
-      </Link>
+    <div dir={isRtl ? "rtl" : "ltr"} className="flex h-screen overflow-hidden bg-[#f8f9fa]">
+      {/* Left jump-list */}
+      <aside className="hidden lg:flex w-72 flex-col bg-surface-container-lowest border-r border-outline-variant/30 shrink-0 h-full overflow-hidden select-none">
+        <div className="p-4 border-b border-outline-variant/20 flex items-center justify-between gap-3">
+          <Link
+            href="/notebooks"
+            className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors min-w-0"
+          >
+            <span className="material-symbols-outlined text-sm font-bold">
+              {isRtl ? "arrow_forward" : "arrow_back"}
+            </span>
+            <span className="truncate">{isRtl ? "כל המחברות" : "All notebooks"}</span>
+          </Link>
+          <button
+            onClick={handleAddProblem}
+            disabled={creating}
+            className="h-8 w-8 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
+            title={isRtl ? "תרגיל חדש" : "New problem"}
+          >
+            <span className="material-symbols-outlined text-sm font-extrabold">add</span>
+          </button>
+        </div>
 
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-outline-variant/20">
-        <div className="flex-1">
-          {isEditingTitle ? (
-            <div className="flex items-center gap-2 max-w-md">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+          {pages.length === 0 ? (
+            <div className="text-center text-xs text-on-surface-variant/70 py-6 font-medium">
+              {isRtl ? "אין עדיין תרגילים" : "No problems yet"}
+            </div>
+          ) : (
+            pages.map((p, idx) => {
+              const strokes = p.strokes as { parts?: { lastResult?: { status?: string } | null }[] } | null;
+              let dot = "bg-neutral-300";
+              if (strokes?.parts?.some((pt) => pt.lastResult?.status === "wrong")) dot = "bg-error";
+              else if (strokes?.parts?.some((pt) => pt.lastResult?.status === "incomplete")) dot = "bg-amber-500";
+              else if (strokes?.parts?.some((pt) => pt.lastResult?.status === "correct")) dot = "bg-emerald-500";
+
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    document
+                      .getElementById(`problem-${p.id}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="w-full text-left rounded-lg p-2.5 border border-outline-variant/20 hover:bg-surface-container-low/60 hover:border-primary/40 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-secondary">
+                      {isRtl ? `תרגיל ${idx + 1}` : `Problem ${idx + 1}`}
+                    </span>
+                    <span className={`h-2 w-2 rounded-full ${dot}`} />
+                  </div>
+                  <p className="text-xs font-semibold text-on-surface truncate" dir="auto">
+                    {p.problem.trim() || (isRtl ? "(ללא כותרת)" : "(Untitled)")}
+                  </p>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </aside>
+
+      {/* Main paper pane */}
+      <main className="notebook-paper-bleed flex-1 overflow-y-auto h-full relative select-text">
+        {/* Sticky glass header */}
+        <header className="tool-glass sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-8 py-3 border-b border-outline-variant/20">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {isEditingTitle ? (
               <input
                 type="text"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
                 onBlur={handleRename}
                 onKeyDown={(e) => e.key === "Enter" && handleRename()}
-                className="w-full rounded-xl border-2 border-primary bg-surface-container-low px-4 py-2 text-2xl font-bold text-on-surface focus:outline-none"
+                className="flex-1 max-w-md rounded-lg border border-primary bg-surface-container-low px-3 py-1.5 text-base font-bold text-on-surface focus:outline-none"
                 autoFocus
               />
+            ) : (
               <button
-                onClick={handleRename}
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-on-primary hover:bg-primary/95 transition-colors shrink-0"
+                onClick={() => setIsEditingTitle(true)}
+                className="flex items-center gap-2 group min-w-0"
               >
-                {isRtl ? "שמור" : "Save"}
+                <h1 className="note-title text-xl sm:text-2xl font-extrabold text-on-surface group-hover:text-primary transition-colors truncate">
+                  {notebook.title}
+                </h1>
+                <span className="material-symbols-outlined text-outline opacity-0 group-hover:opacity-100 transition-opacity text-base">
+                  edit
+                </span>
+              </button>
+            )}
+            <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-wider text-outline">
+              {pages.length} {isRtl ? "תרגילים" : "problems"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setFormulaOpen((p) => !p)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant/60 bg-surface-container-lowest px-3.5 py-1.5 text-xs font-bold text-on-surface hover:bg-surface-container-low transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">menu_book</span>
+              <span className="hidden sm:inline">{isRtl ? "נוסחאות" : "Formulas"}</span>
+            </button>
+            <button
+              onClick={handleAddProblem}
+              disabled={creating}
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-on-primary hover:bg-primary/95 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-sm font-bold">add</span>
+              <span className="hidden sm:inline">{isRtl ? "תרגיל חדש" : "New problem"}</span>
+              <span className="sm:hidden">{isRtl ? "חדש" : "New"}</span>
+            </button>
+          </div>
+        </header>
+
+        {/* The paper itself */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-12 py-8 sm:py-12">
+          {pages.length === 0 ? (
+            <div className="text-center py-20 space-y-4">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-container/60 text-on-surface-variant mx-auto">
+                <span className="material-symbols-outlined text-4xl">draw</span>
+              </div>
+              <p className="text-sm font-semibold text-on-surface-variant">
+                {isRtl
+                  ? "המחברת ריקה. הוסף את התרגיל הראשון שלך כדי להתחיל."
+                  : "This notebook is empty. Add your first problem to get started."}
+              </p>
+              <button
+                onClick={handleAddProblem}
+                disabled={creating}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-3 text-sm font-bold text-on-primary hover:bg-primary/95 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 shadow-sm"
+              >
+                <span className="material-symbols-outlined text-base">add</span>
+                <span>{isRtl ? "התחל תרגיל ראשון" : "Start first problem"}</span>
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingTitle(true)}>
-              <h1 className="note-title text-3xl font-extrabold text-on-surface hover:text-primary transition-colors">
-                {notebook.title}
-              </h1>
-              <span className="material-symbols-outlined text-outline opacity-0 group-hover:opacity-100 transition-opacity text-lg">
-                edit
-              </span>
-            </div>
+            <>
+              {pages.map((p, i) => (
+                <NotebookSection
+                  key={p.id}
+                  page={p}
+                  index={i}
+                  lang={lang}
+                  onDeleted={refreshPages}
+                />
+              ))}
+
+              {/* Add-another-problem pill at the bottom of the paper */}
+              <div className="flex justify-center pt-8 pb-12">
+                <button
+                  onClick={handleAddProblem}
+                  disabled={creating}
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-primary/40 bg-surface-container-lowest/60 px-7 py-3.5 text-sm font-bold text-primary hover:bg-primary/5 hover:border-primary hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  <span className="material-symbols-outlined text-base">add</span>
+                  <span>{isRtl ? "הוסף תרגיל נוסף" : "Add another problem"}</span>
+                  <span className="text-[10px] font-mono text-outline/60 hidden sm:inline">Ctrl+N</span>
+                </button>
+              </div>
+            </>
           )}
-          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1.5">
-            {isRtl
-              ? `עודכן לאחרונה: ${new Date(notebook.updated_at).toLocaleDateString()}`
-              : `Last updated: ${new Date(notebook.updated_at).toLocaleDateString()}`}
-          </p>
         </div>
 
-        <button
-          onClick={newPage}
-          disabled={creating}
-          className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-on-primary hover:bg-primary/95 disabled:opacity-50 transition-all hover:scale-105 active:scale-95 flex items-center gap-1 shrink-0 shadow-sm"
-        >
-          <span className="material-symbols-outlined text-sm font-bold">add</span>
-          <span>{isRtl ? "תרגיל חדש" : "New Problem"}</span>
-        </button>
-      </header>
-
-      {/* Statistics dashboard */}
-      {totalPages > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-low/40 p-4 shadow-sm">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-outline">
-              {isRtl ? "סה\"כ דפים" : "Total pages"}
-            </span>
-            <div className="text-3xl font-black text-on-surface mt-1">{totalPages}</div>
-          </div>
-          <div className="rounded-2xl border border-green-500/20 bg-green-500/[0.03] p-4 shadow-sm">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-green-700">
-              {isRtl ? "תקינים" : "Correct"}
-            </span>
-            <div className="text-3xl font-black text-green-700 mt-1">{correctPages}</div>
-          </div>
-          <div className="rounded-2xl border border-error/25 bg-error/[0.03] p-4 shadow-sm">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-error">
-              {isRtl ? "שגויים" : "With mistakes"}
-            </span>
-            <div className="text-3xl font-black text-error mt-1">{mistakePages}</div>
-          </div>
-          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.03] p-4 shadow-sm">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700">
-              {isRtl ? "בתהליך" : "In progress"}
-            </span>
-            <div className="text-3xl font-black text-amber-700 mt-1">{inProgressPages}</div>
-          </div>
-        </div>
-      )}
-
-      {/* Search Filter */}
-      {totalPages > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-outline-variant/60 bg-surface-container-low px-3.5 py-2.5 max-w-md shadow-inner">
-          <span className="material-symbols-outlined text-outline text-lg">search</span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isRtl ? "חפש תרגיל..." : "Filter problems by query..."}
-            className="w-full bg-transparent text-sm text-on-surface focus:outline-none placeholder:text-outline"
-          />
-        </div>
-      )}
-
-      {/* Pages list */}
-      {totalPages === 0 ? (
-        <div className="rounded-3xl border-2 border-dashed border-outline-variant/60 bg-surface-container-low/40 p-10 text-center space-y-4 max-w-md mx-auto">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-container text-on-surface-variant mx-auto">
-            <span className="material-symbols-outlined text-3xl">description</span>
-          </div>
-          <p className="text-sm font-semibold text-on-surface-variant leading-relaxed">
-            {isRtl ? "אין עדיין דפים במחברת זו." : "There are no pages in this notebook yet."}
-          </p>
-          <button
-            onClick={newPage}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-xs font-bold text-on-primary hover:bg-primary/95 transition-all hover:scale-105 active:scale-95 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-sm font-bold">add</span>
-            {isRtl ? "צור דף ראשון" : "Create first page"}
-          </button>
-        </div>
-      ) : filteredPages.length === 0 ? (
-        <div className="text-center text-sm text-on-surface-variant py-8 font-medium">
-          {isRtl ? "לא נמצאו תרגילים מתאימים." : "No problems matched your search."}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredPages.map((p, idx) => {
-            const status = pageStatuses[pages.indexOf(p)];
-
-            let badgeBg = "bg-neutral-100 text-neutral-600 border border-outline-variant/20";
-            let badgeText = isRtl ? "לא נבדק" : "Unchecked";
-
-            if (status === "correct") {
-              badgeBg = "bg-green-100 text-green-700 border border-green-200";
-              badgeText = isRtl ? "תקין" : "Correct";
-            } else if (status === "mistake") {
-              badgeBg = "bg-red-100 text-red-700 border border-red-200";
-              badgeText = isRtl ? "טעות נמצאה" : "Mistake";
-            } else if (status === "incomplete" || status === "in-progress") {
-              badgeBg = "bg-amber-100 text-amber-700 border border-amber-200";
-              badgeText = isRtl ? "בתהליך" : "In Progress";
-            }
-
-            return (
-              <Link
-                key={p.id}
-                href={`/notebooks/${notebook.id}/${p.id}`}
-                className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 hover:border-primary hover:shadow-md hover:scale-[1.01] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
-              >
-                <div className="min-w-0 flex-1 space-y-2.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="rounded-lg bg-secondary-container/15 text-secondary px-2.5 py-0.5 text-[9px] font-bold border border-secondary/20 uppercase tracking-wider">
-                      {isRtl ? `תרגיל ${idx + 1}` : `Problem ${idx + 1}`}
-                    </span>
-                    <span className={`rounded-lg px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${badgeBg}`}>
-                      {badgeText}
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors truncate pr-4" dir="auto">
-                    {p.problem.trim() || (isRtl ? "(תרגיל ללא כותרת)" : "(Untitled problem)")}
-                  </h3>
-                </div>
-                <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-outline-variant/10 pt-2.5 sm:pt-0">
-                  <span className="text-[10px] font-bold text-outline">
-                    {new Date(p.updated_at).toLocaleDateString()}
-                  </span>
-                  <span className="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all text-lg font-bold">
-                    {isRtl ? "arrow_back" : "arrow_forward"}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </main>
+        <FormulaSheet
+          isOpen={formulaOpen}
+          onClose={() => setFormulaOpen(false)}
+          onInsertFormula={handleInsertFormula}
+        />
+      </main>
+    </div>
   );
 }

@@ -15,7 +15,7 @@ type SymbolItem = {
 };
 
 export default function MathPalette({ onSelectSymbol }: Props) {
-  const [activeTab, setActiveTab] = useState<"calc" | "linalg" | "general" | "greek" | "constants">("calc");
+  const [activeTab, setActiveTab] = useState<"calc" | "linalg" | "general" | "greek" | "constants" | "units">("calc");
   const lang = typeof window !== "undefined" ? (localStorage.getItem("mathpad.lang") as Lang || "en") : "en";
   const isRtl = lang === "he";
 
@@ -82,17 +82,46 @@ export default function MathPalette({ onSelectSymbol }: Props) {
         { label: "π", latex: "\\pi ", tooltip: "Pi (3.1415)" },
         { label: "e", latex: "e", tooltip: "Euler's constant (2.718)" },
         { label: "φ", latex: "\\phi ", tooltip: "Golden ratio (1.618)" },
-        { label: "c", latex: "c", tooltip: "Speed of light (2.998e8 m/s)" },
-        { label: "G", latex: "G", tooltip: "Gravitational constant (6.674e-11)" },
-        { label: "h", latex: "h", tooltip: "Planck constant" },
-        { label: "ℏ", latex: "\\hbar ", tooltip: "Reduced Planck constant" },
-        { label: "k_B", latex: "k_B", tooltip: "Boltzmann constant" },
-        { label: "N_A", latex: "N_A", tooltip: "Avogadro number" },
-        { label: "R", latex: "R", tooltip: "Gas constant" },
-        { label: "ε_0", latex: "\\epsilon_0", tooltip: "Vacuum permittivity" },
-        { label: "μ_0", latex: "\\mu_0", tooltip: "Vacuum permeability" },
-        { label: "g", latex: "g", tooltip: "Standard gravity (9.81 m/s²)" },
-        { label: "q_e", latex: "q_e", tooltip: "Elementary charge" },
+        { label: "c", latex: "2.998e8 m/s", tooltip: "Speed of light (2.998e8 m/s)" },
+        { label: "g", latex: "9.81 m/s^2", tooltip: "Standard gravity (9.81 m/s²)" },
+        { label: "G", latex: "6.674e-11 N*m^2/kg^2", tooltip: "Gravitational constant" },
+        { label: "h", latex: "6.626e-34 J*s", tooltip: "Planck constant" },
+        { label: "ℏ", latex: "1.055e-34 J*s", tooltip: "Reduced Planck constant" },
+        { label: "k_B", latex: "1.381e-23 J/K", tooltip: "Boltzmann constant" },
+        { label: "N_A", latex: "6.022e23 /mol", tooltip: "Avogadro number" },
+        { label: "R", latex: "8.314 J/(mol*K)", tooltip: "Gas constant" },
+        { label: "ε_0", latex: "8.854e-12 F/m", tooltip: "Vacuum permittivity" },
+        { label: "μ_0", latex: "1.257e-6 N/A^2", tooltip: "Vacuum permeability" },
+        { label: "m_e", latex: "9.109e-31 kg", tooltip: "Electron rest mass" },
+        { label: "m_p", latex: "1.673e-27 kg", tooltip: "Proton rest mass" },
+        { label: "q_e", latex: "1.602e-19 C", tooltip: "Elementary charge" },
+      ],
+    },
+    units: {
+      title: isRtl ? "יחידות פיזיקליות" : "Units",
+      items: [
+        { label: "m", latex: " m", tooltip: isRtl ? "מטר" : "meter (length)" },
+        { label: "kg", latex: " kg", tooltip: isRtl ? "קילוגרם" : "kilogram (mass)" },
+        { label: "s", latex: " s", tooltip: isRtl ? "שנייה" : "second (time)" },
+        { label: "A", latex: " A", tooltip: isRtl ? "אמפר" : "ampere (current)" },
+        { label: "K", latex: " K", tooltip: isRtl ? "קלווין" : "kelvin (temp)" },
+        { label: "N", latex: " N", tooltip: isRtl ? "ניוטון" : "newton (force)" },
+        { label: "J", latex: " J", tooltip: isRtl ? "ג'אול" : "joule (energy)" },
+        { label: "W", latex: " W", tooltip: isRtl ? "וואט" : "watt (power)" },
+        { label: "Pa", latex: " Pa", tooltip: isRtl ? "פסקל" : "pascal (pressure)" },
+        { label: "V", latex: " V", tooltip: isRtl ? "וולט" : "volt (voltage)" },
+        { label: "Ω", latex: " Ω", tooltip: isRtl ? "אום" : "ohm (resistance)" },
+        { label: "ft", latex: " ft", tooltip: isRtl ? "רגל" : "foot" },
+        { label: "lb", latex: " lb", tooltip: isRtl ? "ליברה" : "pound" },
+        { label: "°F", latex: " °F", tooltip: isRtl ? "פרנהייט" : "fahrenheit" },
+        { label: "psi", latex: " psi", tooltip: isRtl ? "PSI" : "psi" },
+        { label: "hp", latex: " hp", tooltip: isRtl ? "כוח סוס" : "horsepower" },
+        { label: "kΩ", latex: " kΩ", tooltip: isRtl ? "קילואום" : "kilohm" },
+        { label: "μF", latex: " μF", tooltip: isRtl ? "מיקרופארד" : "microfarad" },
+        { label: "mA", latex: " mA", tooltip: isRtl ? "מיליאמפר" : "milliampere" },
+        { label: "mV", latex: " mV", tooltip: isRtl ? "מיליוולט" : "millivolt" },
+        { label: "ns", latex: " ns", tooltip: isRtl ? "נאנו-שנייה" : "nanosecond" },
+        { label: "μs", latex: " μs", tooltip: isRtl ? "מיקרו-שנייה" : "microsecond" },
       ],
     },
   };

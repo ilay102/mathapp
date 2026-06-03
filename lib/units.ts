@@ -159,6 +159,17 @@ const OTHER: UnitDef[] = [
   { symbol: "pF",  factor: 1e-12,dim: [-2, -1, 4, 2, 0, 0, 0], family: "capacitance" },
   { symbol: "mH",  factor: 1e-3, dim: [2, 1, -2, -2, 0, 0, 0], family: "inductance" },
   { symbol: "μH",  factor: 1e-6, dim: [2, 1, -2, -2, 0, 0, 0], family: "inductance" },
+
+  // Force
+  { symbol: "dyn", factor: 1e-5, dim: [1, 1, -2, 0, 0, 0, 0], family: "force" },
+  { symbol: "lbf", factor: 4.448221615, dim: [1, 1, -2, 0, 0, 0, 0], family: "force" },
+  { symbol: "kgf", factor: 9.80665, dim: [1, 1, -2, 0, 0, 0, 0], family: "force" },
+
+  // Power
+  { symbol: "BTU/h", factor: 0.2930722, dim: [2, 1, -3, 0, 0, 0, 0], family: "power" },
+
+  // Pressure
+  { symbol: "mmHg", factor: 133.322387415, dim: [-1, 1, -2, 0, 0, 0, 0], family: "pressure" },
 ];
 
 export const UNIT_DB: UnitDef[] = [...SI_BASE, ...SI_DERIVED, ...OTHER];
@@ -372,14 +383,24 @@ function formatNum(n: number, sig: number): string {
 // Convert between unit symbols (for the swap dropdown)
 // ---------------------------------------------------------------------------
 
+function getUnitFactorAndOffset(unitStr: string): { factor: number; dim: Dim; offset: number } {
+  const u = lookupUnit(unitStr);
+  if (u) {
+    return { factor: u.factor, dim: u.dim, offset: u.offset ?? 0 };
+  }
+  const parsed = parseUnitExpr(unitStr);
+  return { factor: parsed.factor, dim: parsed.dim, offset: 0 };
+}
+
 /** Convert a numeric value from one unit to another. Throws if dimensions don't match. */
 export function convert(value: number, fromUnit: string, toUnit: string): number {
-  const from = parseUnitExpr(fromUnit);
-  const to   = parseUnitExpr(toUnit);
+  const from = getUnitFactorAndOffset(fromUnit);
+  const to   = getUnitFactorAndOffset(toUnit);
   if (!dimEq(from.dim, to.dim)) {
     throw new Error(`Can't convert ${fromUnit} → ${toUnit}: dimensions differ`);
   }
-  return (value * from.factor) / to.factor;
+  const valSI = value * from.factor + from.offset;
+  return (valSI - to.offset) / to.factor;
 }
 
 /** All units in the same family — used by the swap-unit dropdown. */

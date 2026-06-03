@@ -115,16 +115,15 @@ function eigenvalues2x2(m: MatrixData): string {
   if (disc >= 0) {
     const l1 = (trace + Math.sqrt(disc)) / 2;
     const l2 = (trace - Math.sqrt(disc)) / 2;
-    return `λ₁ = ${fmt(l1)}, λ₂ = ${fmt(l2)}`;
+    return `\\lambda_1 = ${fmt(l1)}, \\lambda_2 = ${fmt(l2)}`;
   } else {
     const real = trace / 2;
     const imag = Math.sqrt(-disc) / 2;
-    return `λ = ${fmt(real)} ± ${fmt(imag)}i`;
+    return `\\lambda = ${fmt(real)} \\pm ${fmt(imag)}i`;
   }
 }
 
 function eigenvalues3x3(m: MatrixData): string {
-  // Characteristic polynomial: -λ³ + tr(A)λ² - (sum of 2×2 minors)λ + det(A) = 0
   const tr = m[0][0] + m[1][1] + m[2][2];
   const m11 = m[1][1] * m[2][2] - m[1][2] * m[2][1];
   const m22 = m[0][0] * m[2][2] - m[0][2] * m[2][0];
@@ -132,14 +131,11 @@ function eigenvalues3x3(m: MatrixData): string {
   const cofSum = m11 + m22 + m33;
   const d = det3x3(m);
 
-  // λ³ - tr·λ² + cofSum·λ - det = 0
-  // Use numerical method (companion matrix eigenvalues via QR would be best, but let's use cubic formula / Newton)
   const roots = solveCubic(1, -tr, cofSum, -d);
-  return roots.map((r, i) => `λ${subscript(i + 1)} = ${r}`).join(", ");
+  return roots.map((r, i) => `\\lambda_${i + 1} = ${r}`).join(", ");
 }
 
 function solveCubic(a: number, b: number, c: number, d: number): string[] {
-  // Normalize: x³ + px² + qx + r = 0
   const p = b / a, q = c / a, r = d / a;
   const Q = (3 * q - p * p) / 9;
   const R = (9 * p * q - 27 * r - 2 * p * p * p) / 54;
@@ -208,7 +204,7 @@ export default function MatrixCalc({ lang }: Props) {
   const [size, setSize] = useState(3);
   const [matA, setMatA] = useState<MatrixData>(identity(3));
   const [matB, setMatB] = useState<MatrixData>(identity(3));
-  const [results, setResults] = useState<{ label: string; value: string; latex?: string }[]>([]);
+  const [results, setResults] = useState<{ label: React.ReactNode; value: string; latex?: string }[]>([]);
   const [showB, setShowB] = useState(false);
   const [rrefSteps, setRrefSteps] = useState<string[]>([]);
 
@@ -230,160 +226,208 @@ export default function MatrixCalc({ lang }: Props) {
   }, []);
 
   const compute = (op: string) => {
-    const res: { label: string; value: string; latex?: string }[] = [];
+    const res: { label: React.ReactNode; value: string; latex?: string }[] = [];
     setRrefSteps([]);
 
     if (op === "det") {
       const d = det(matA);
-      res.push({ label: "det(A)", value: fmt(d), latex: `\\det(A) = ${fmt(d)}` });
+      res.push({ label: <InlineMath math="\det(A)" />, value: fmt(d), latex: `\\det(A) = ${fmt(d)}` });
     }
     if (op === "inv") {
       const inv = inverse(matA);
       if (inv) {
-        res.push({ label: "A⁻¹", value: "", latex: `A^{-1} = ${matrixToLatex(inv)}` });
+        res.push({ label: <InlineMath math="A^{-1}" />, value: "", latex: `A^{-1} = ${matrixToLatex(inv)}` });
       } else {
-        res.push({ label: "A⁻¹", value: isRtl ? "המטריצה סינגולרית (det=0)" : "Matrix is singular (det=0)" });
+        res.push({ label: <InlineMath math="A^{-1}" />, value: isRtl ? "המטריצה סינגולרית (det=0)" : "Matrix is singular (det=0)" });
       }
     }
     if (op === "eigen") {
       if (size === 2) {
-        res.push({ label: isRtl ? "ערכים עצמיים" : "Eigenvalues", value: eigenvalues2x2(matA) });
+        res.push({ label: isRtl ? "ערכים עצמיים" : "Eigenvalues", value: "", latex: eigenvalues2x2(matA) });
       } else if (size === 3) {
-        res.push({ label: isRtl ? "ערכים עצמיים" : "Eigenvalues", value: eigenvalues3x3(matA) });
+        res.push({ label: isRtl ? "ערכים עצמיים" : "Eigenvalues", value: "", latex: eigenvalues3x3(matA) });
       } else {
         res.push({ label: isRtl ? "ערכים עצמיים" : "Eigenvalues", value: isRtl ? "נתמך רק 2×2 ו-3×3" : "Supported for 2×2 and 3×3 only" });
       }
     }
     if (op === "rref") {
       const { result, steps } = rref(matA);
-      res.push({ label: "RREF(A)", value: "", latex: matrixToLatex(result) });
+      res.push({ label: <InlineMath math="\text{RREF}(A)" />, value: "", latex: `\\text{RREF}(A) = ${matrixToLatex(result)}` });
       setRrefSteps(steps);
     }
     if (op === "transpose") {
       const t = transpose(matA);
-      res.push({ label: "Aᵀ", value: "", latex: `A^T = ${matrixToLatex(t)}` });
+      res.push({ label: <InlineMath math="A^T" />, value: "", latex: `A^T = ${matrixToLatex(t)}` });
     }
     if (op === "rank") {
       const r = rank(matA);
-      res.push({ label: isRtl ? "דרגה" : "Rank", value: String(r) });
-      res.push({ label: isRtl ? "אפסיות" : "Nullity", value: String(size - r) });
+      res.push({ label: isRtl ? "דרגה (Rank)" : "Rank", value: String(r), latex: `\\text{rank}(A) = ${r}` });
+      res.push({ label: isRtl ? "אפסיות (Nullity)" : "Nullity", value: String(size - r), latex: `\\text{nullity}(A) = ${size - r}` });
     }
     if (op === "trace") {
       const t = trace(matA);
-      res.push({ label: "tr(A)", value: fmt(t) });
+      res.push({ label: <InlineMath math="\text{tr}(A)" />, value: fmt(t), latex: `\\text{tr}(A) = ${fmt(t)}` });
     }
     if (op === "mul") {
       const product = matMul(matA, matB);
       if (product) {
-        res.push({ label: "A · B", value: "", latex: `A \\cdot B = ${matrixToLatex(product)}` });
+        res.push({ label: <InlineMath math="A \cdot B" />, value: "", latex: `A \\cdot B = ${matrixToLatex(product)}` });
       } else {
-        res.push({ label: "A · B", value: isRtl ? "מימדים לא תואמים" : "Dimension mismatch" });
+        res.push({ label: <InlineMath math="A \cdot B" />, value: isRtl ? "מימדים לא תואמים" : "Dimension mismatch" });
       }
     }
     setResults(res);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       {/* Title */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md">
-          <span className="material-symbols-outlined">grid_view</span>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
+          <span className="material-symbols-outlined text-2xl">grid_view</span>
         </div>
-        <h2 className="note-title text-xl font-bold text-on-surface">
-          {isRtl ? "מחשבון מטריצות" : "Matrix Calculator"}
-        </h2>
+        <div>
+          <h2 className="note-title text-2xl font-bold text-on-surface">
+            {isRtl ? "מחשבון מטריצות" : "Matrix Calculator"}
+          </h2>
+          <p className="text-xs text-on-surface-variant">
+            {isRtl ? "חישוב דטרמיננטות, הופכיות, ערכים עצמיים, וצעדי דירוג RREF" : "Solve determinants, inverses, eigenvalues, and view row-reduction steps"}
+          </p>
+        </div>
       </div>
 
-      {/* Size Selector */}
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-on-surface-variant font-medium">{isRtl ? "גודל:" : "Size:"}</span>
-        {[2, 3, 4].map((n) => (
-          <button
-            key={n}
-            onClick={() => updateSize(n)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-              size === n ? "bg-primary text-on-primary shadow-sm" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-            }`}
-          >
-            {n}×{n}
-          </button>
-        ))}
+      {/* Options Row */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/20 pb-4">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-on-surface-variant font-medium">{isRtl ? "גודל:" : "Size:"}</span>
+          <div className="inline-flex rounded-xl bg-surface-container p-1 border border-outline-variant/30">
+            {[2, 3, 4].map((n) => (
+              <button
+                key={n}
+                onClick={() => updateSize(n)}
+                className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
+                  size === n ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                {n}×{n}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
-          onClick={() => setShowB(!showB)}
-          className={`ml-4 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-            showB ? "bg-secondary text-on-secondary" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+          onClick={() => {
+            setShowB(!showB);
+            setResults([]);
+            setRrefSteps([]);
+          }}
+          className={`rounded-xl px-4 py-2 text-xs font-bold transition-all border flex items-center gap-1.5 ${
+            showB 
+              ? "bg-secondary-container/10 border-secondary text-secondary" 
+              : "bg-surface-container-lowest border-outline-variant hover:bg-surface-container-low text-on-surface-variant"
           }`}
         >
-          {showB ? (isRtl ? "הסתר B" : "Hide B") : (isRtl ? "הצג B (לכפל)" : "Show B (for A·B)")}
+          <span className="material-symbols-outlined text-base">
+            {showB ? "layers_clear" : "library_add"}
+          </span>
+          {showB ? (isRtl ? "הסתר מטריצה B" : "Hide Matrix B") : (isRtl ? "הצג מטריצה B (לכפל)" : "Show Matrix B (for A·B)")}
         </button>
       </div>
 
-      {/* Matrix Input */}
-      <div className="flex flex-wrap gap-8">
-        <MatrixInput label="A" size={size} data={matA} onChange={(r, c, v) => updateCell("A", r, c, v)} />
-        {showB && <MatrixInput label="B" size={size} data={matB} onChange={(r, c, v) => updateCell("B", r, c, v)} />}
-      </div>
-
-      {/* Operations */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { op: "det", label: "det(A)", icon: "calculate" },
-          { op: "inv", label: "A⁻¹", icon: "swap_horiz" },
-          { op: "eigen", label: isRtl ? "ע.ע." : "Eigenvalues", icon: "star" },
-          { op: "rref", label: "RREF", icon: "table_rows" },
-          { op: "rank", label: isRtl ? "דרגה" : "Rank", icon: "format_list_numbered" },
-          { op: "transpose", label: "Aᵀ", icon: "flip" },
-          { op: "trace", label: "tr(A)", icon: "diagonal_line" },
-          ...(showB ? [{ op: "mul", label: "A · B", icon: "close" }] : []),
-        ].map((btn) => (
-          <button
-            key={btn.op}
-            onClick={() => compute(btn.op)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container hover:bg-primary-container/80 active:scale-95 transition-all shadow-sm"
-          >
-            <span className="material-symbols-outlined text-base">{btn.icon}</span>
-            {btn.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-5 space-y-3 shadow-sm">
-          <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-sm">output</span>
-            {isRtl ? "תוצאות" : "Results"}
-          </div>
-          {results.map((r, i) => (
-            <div key={i} className="flex items-start gap-3 rounded-lg bg-surface-container-low/60 p-3">
-              <span className="text-xs font-bold text-on-surface-variant min-w-[60px]">{r.label}</span>
-              {r.latex ? (
-                <div className="overflow-x-auto text-lg">
-                  <SafeLatex tex={r.latex} />
-                </div>
-              ) : (
-                <span className="font-mono text-sm text-on-surface">{r.value}</span>
-              )}
+      {/* Matrix Inputs (Side by Side) */}
+      <div className="flex flex-wrap items-center justify-center lg:justify-start gap-12">
+        <MatrixInputWidget label="A" size={size} data={matA} onChange={(r, c, v) => updateCell("A", r, c, v)} isRtl={isRtl} />
+        {showB && (
+          <div className="flex items-center gap-8">
+            <div className="text-outline-variant text-3xl font-bold flex items-center justify-center self-center shrink-0">
+              <span className="material-symbols-outlined text-3xl">close</span>
             </div>
-          ))}
+            <MatrixInputWidget label="B" size={size} data={matB} onChange={(r, c, v) => updateCell("B", r, c, v)} isRtl={isRtl} />
+          </div>
+        )}
+      </div>
 
-          {/* RREF Steps */}
-          {rrefSteps.length > 0 && (
-            <div className="mt-3 border-t border-outline-variant/30 pt-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-secondary mb-2">
-                {isRtl ? "צעדי הדירוג" : "Row Reduction Steps"}
+      {/* Operations Toolbar */}
+      <div className="space-y-2">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-outline">
+          {isRtl ? "פעולות חישוב" : "Operations"}
+        </div>
+        <div className="flex flex-wrap gap-2.5">
+          {[
+            { op: "det", label: "det(A)", icon: "calculate" },
+            { op: "inv", label: "A⁻¹", icon: "swap_horiz" },
+            { op: "eigen", label: isRtl ? "ערכים עצמיים" : "Eigenvalues", icon: "star" },
+            { op: "rref", label: "RREF", icon: "table_rows" },
+            { op: "rank", label: isRtl ? "דרגה וגרעין" : "Rank & Nullity", icon: "format_list_numbered" },
+            { op: "transpose", label: "Aᵀ", icon: "flip" },
+            { op: "trace", label: "tr(A)", icon: "diagonal_line" },
+            ...(showB ? [{ op: "mul", label: "A · B", icon: "close" }] : []),
+          ].map((btn) => (
+            <button
+              key={btn.op}
+              onClick={() => compute(btn.op)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary-container px-4.5 py-2.5 text-sm font-semibold text-on-primary-container hover:bg-primary-container/85 active:scale-95 transition-all shadow-sm"
+            >
+              <span className="material-symbols-outlined text-base">{btn.icon}</span>
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Results Panel */}
+      {results.length > 0 && (
+        <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-sm space-y-4">
+          <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 border-b border-outline-variant/20 pb-3">
+            <span className="material-symbols-outlined text-sm">output</span>
+            {isRtl ? "תוצאות החישוב" : "Calculation Results"}
+          </div>
+
+          <div className="space-y-3">
+            {results.map((r, i) => (
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl bg-surface-container-low/40 hover:bg-surface-container-low/75 p-4 border border-outline-variant/20 transition-all">
+                <span className="text-xs font-bold text-on-surface-variant flex items-center gap-2 shrink-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                  {r.label}
+                </span>
+                <div className="overflow-x-auto text-base select-all text-on-surface py-1">
+                  {r.latex ? (
+                    <div className="my-1">
+                      <SafeLatex tex={r.latex} />
+                    </div>
+                  ) : (
+                    <span className="font-mono text-sm">{r.value}</span>
+                  )}
+                </div>
               </div>
-              <ol className="space-y-1">
+            ))}
+          </div>
+
+          {/* RREF Stepper (Timeline) */}
+          {rrefSteps.length > 0 && (
+            <div className="mt-6 border-t border-outline-variant/20 pt-5 space-y-4">
+              <div className="text-xs font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">timeline</span>
+                {isRtl ? "שלבי דירוג המטריצה (RREF)" : "Row Reduction Stepper"}
+              </div>
+              
+              <div className="relative pl-6 border-l-2 border-outline-variant/30 space-y-5 py-2 ml-3" dir="ltr">
                 {rrefSteps.map((step, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold shrink-0">
+                  <div key={i} className="relative">
+                    {/* Circle Node */}
+                    <span className="absolute -left-[31px] top-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-secondary text-white text-[9px] font-bold shadow-md shadow-secondary/20">
                       {i + 1}
                     </span>
-                    <SafeLatex tex={step} />
-                  </li>
+                    {/* Step Content */}
+                    <div className="bg-surface-container-low/60 rounded-xl p-3.5 border border-outline-variant/20 inline-flex items-center gap-4 hover:border-secondary/30 transition-colors">
+                      <span className="text-xs font-bold text-secondary uppercase tracking-wide">Step {i+1}</span>
+                      <div className="text-sm font-mono bg-surface-container-lowest border border-outline-variant/10 rounded px-2.5 py-1">
+                        <SafeLatex tex={step} />
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </ol>
+              </div>
             </div>
           )}
         </div>
@@ -392,25 +436,39 @@ export default function MatrixCalc({ lang }: Props) {
   );
 }
 
-function MatrixInput({
-  label, size, data, onChange,
-}: { label: string; size: number; data: MatrixData; onChange: (r: number, c: number, v: string) => void }) {
+function MatrixInputWidget({
+  label, size, data, onChange, isRtl
+}: { label: string; size: number; data: MatrixData; onChange: (r: number, c: number, v: string) => void; isRtl: boolean }) {
   return (
-    <div className="space-y-2">
-      <span className="text-sm font-bold text-on-surface">{label}</span>
-      <div className="inline-grid gap-1" style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}>
-        {Array.from({ length: size }).map((_, r) =>
-          Array.from({ length: size }).map((_, c) => (
-            <input
-              key={`${r}-${c}`}
-              type="number"
-              step="any"
-              value={data[r]?.[c] ?? 0}
-              onChange={(e) => onChange(r, c, e.target.value)}
-              className="w-16 rounded-lg border border-outline-variant/60 bg-surface-container-lowest px-2 py-1.5 text-center text-sm font-mono text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
-            />
-          ))
-        )}
+    <div className="flex flex-col items-center gap-3">
+      <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+        {isRtl ? `מטריצה ${label}` : `Matrix ${label}`}
+      </span>
+      
+      {/* Mathematical Bracket Layout */}
+      <div className="flex items-stretch gap-1.5 relative py-1" dir="ltr">
+        {/* Left bracket */}
+        <div className="w-2.5 border-t-2 border-b-2 border-l-2 border-outline-variant/80 rounded-l shrink-0" />
+        
+        {/* Grid Cells */}
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
+          {Array.from({ length: size }).map((_, r) =>
+            Array.from({ length: size }).map((_, c) => (
+              <input
+                key={`${r}-${c}`}
+                type="number"
+                step="any"
+                value={data[r]?.[c] ?? 0}
+                onChange={(e) => onChange(r, c, e.target.value)}
+                className="w-15 bg-surface-container-low hover:bg-surface-container px-2 py-2 text-center text-sm font-mono font-bold text-on-surface rounded-lg border border-outline-variant/40 focus:border-primary focus:bg-surface-container-lowest focus:outline-none transition-all"
+              />
+            ))
+          )}
+        </div>
+
+        {/* Right bracket */}
+        <div className="w-2.5 border-t-2 border-b-2 border-r-2 border-outline-variant/80 rounded-r shrink-0" />
       </div>
     </div>
   );

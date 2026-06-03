@@ -22,9 +22,16 @@ type Props = {
  *   click km/h → dropdown lists: m/s · km/h · mph · ft/s
  *   pick m/s → calls onConvert({ value: 27.78, unit: "m/s" })
  */
-export default function UnitTag({ value, unit, onConvert, size = "md" }: Props) {
+export default function UnitTag({ value, unit: initialUnit, onConvert, size = "md" }: Props) {
   const [open, setOpen] = useState(false);
+  const [currentUnit, setCurrentUnit] = useState(initialUnit);
+  const [currentValue, setCurrentValue] = useState(value);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCurrentUnit(initialUnit);
+    setCurrentValue(value);
+  }, [initialUnit, value]);
 
   useEffect(() => {
     if (!open) return;
@@ -36,39 +43,58 @@ export default function UnitTag({ value, unit, onConvert, size = "md" }: Props) 
   }, [open]);
 
   // Same-family alternatives (length → m, cm, mm, in, ft, ...)
-  const alts = alternativesFor(unit);
-  const fmtValue = formatNum(value);
+  const alts = alternativesFor(currentUnit);
+  const fmtValue = formatNum(currentValue);
 
   const sm = size === "sm";
   const valuePadding = sm ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm";
 
+  const lang = typeof window !== "undefined" ? (localStorage.getItem("mathpad.lang") || "en") : "en";
+  const isRtl = lang === "he";
+
   return (
-    <span ref={ref} className="relative inline-flex items-center align-baseline rounded-md border border-tertiary/40 bg-tertiary-fixed/40 text-tertiary font-mono">
-      <span className={`${valuePadding} text-on-surface`}>{fmtValue}</span>
+    <span
+      ref={ref}
+      className={`relative inline-flex items-center align-baseline rounded-md border border-tertiary/40 bg-tertiary-fixed/40 text-tertiary font-mono ${
+        isRtl ? "flex-row-reverse" : "flex-row"
+      }`}
+    >
+      <span className={`${valuePadding} text-on-surface ${isRtl ? "rounded-r-md" : "rounded-l-md"}`}>
+        {fmtValue}
+      </span>
       <button
         onClick={() => alts.length > 1 && setOpen((v) => !v)}
-        className={`${valuePadding} border-l border-tertiary/40 hover:bg-tertiary-fixed/60 transition-colors flex items-center gap-0.5 rounded-r-md`}
+        className={`${valuePadding} hover:bg-tertiary-fixed/60 transition-colors flex items-center gap-0.5 ${
+          isRtl
+            ? "border-r border-tertiary/40 rounded-l-md"
+            : "border-l border-tertiary/40 rounded-r-md"
+        }`}
         title={alts.length > 1 ? "Click to convert" : "No alternatives"}
       >
-        {unit}
+        {currentUnit}
         {alts.length > 1 && <span className="material-symbols-outlined text-[10px]">expand_more</span>}
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-30 w-44 rounded-lg border border-outline-variant/60 bg-surface-container-lowest shadow-lg p-1 text-xs">
+        <div className={`absolute top-full mt-1 z-30 w-44 rounded-lg border border-outline-variant/60 bg-surface-container-lowest shadow-lg p-1 text-xs ${
+          isRtl ? "right-0" : "left-0"
+        }`}>
           <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-outline">Convert to</div>
           <ul className="max-h-56 overflow-y-auto">
             {alts.map((u) => {
-              const isCurrent = u.symbol === unit;
+              const isCurrent = u.symbol === currentUnit;
               let converted: number;
-              try { converted = convert(value, unit, u.symbol); }
+              try { converted = convert(currentValue, currentUnit, u.symbol); }
               catch { converted = NaN; }
               return (
                 <li key={u.symbol}>
                   <button
                     onClick={() => {
                       if (isCurrent) return;
-                      onConvert?.({ value: Number(converted.toPrecision(6)), unit: u.symbol });
+                      const nextVal = Number(converted.toPrecision(6));
+                      setCurrentValue(nextVal);
+                      setCurrentUnit(u.symbol);
+                      onConvert?.({ value: nextVal, unit: u.symbol });
                       setOpen(false);
                     }}
                     className={

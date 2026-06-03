@@ -8,6 +8,8 @@ import FunctionGraph from "./FunctionGraph";
 import Graph3D from "./Graph3D";
 import PracticeMore from "./PracticeMore";
 import { type Lang, t, localizeDomain, localizeTechnique } from "@/lib/i18n";
+import UnitTag, { annotateWithUnitTags } from "./UnitTag";
+import { alternativesFor, convert, format, parseQuantity } from "@/lib/units";
 
 export type ErrorEntry = {
   lineIndex: number;
@@ -49,6 +51,14 @@ function SafeLatex({ tex, className = "" }: { tex: string; className?: string })
   }
 }
 
+function ResultLineRenderer({ line, className = "" }: { line: string; className?: string }) {
+  if (!line) return null;
+  if (/[\\^_$]/.test(line)) {
+    return <SafeLatex tex={line} className={className} />;
+  }
+  return <span className={className}>{annotateWithUnitTags(line)}</span>;
+}
+
 function normalizeForMatch(s: string): string {
   const sup: Record<string, string> = { "⁰":"^0","¹":"^1","²":"^2","³":"^3","⁴":"^4","⁵":"^5","⁶":"^6","⁷":"^7","⁸":"^8","⁹":"^9","⁺":"+","⁻":"-" };
   const sub: Record<string, string> = { "₀":"_0","₁":"_1","₂":"_2","₃":"_3","₄":"_4","₅":"_5","₆":"_6","₇":"_7","₈":"_8","₉":"_9" };
@@ -81,20 +91,20 @@ function locateSnippet(line: string, snippet: string): { start: number; end: num
 }
 
 function LineWithSnippetMark({ line, snippet }: { line: string; snippet?: string | null }) {
-  if (!snippet || snippet === line) return <SafeLatex tex={line} className="text-error" />;
+  if (!snippet || snippet === line) return <ResultLineRenderer line={line} className="text-error" />;
   const loc = locateSnippet(line, snippet);
-  if (!loc) return <SafeLatex tex={line} className="text-error" />;
+  if (!loc) return <ResultLineRenderer line={line} className="text-error" />;
   const before = line.slice(0, loc.start);
   const middle = line.slice(loc.start, loc.end);
   const after  = line.slice(loc.end);
   return (
     <span className="inline-flex flex-wrap items-baseline gap-1 align-baseline">
-      {before.trim() && <SafeLatex tex={before} className="text-on-surface" />}
+      {before.trim() && <ResultLineRenderer line={before} className="text-on-surface" />}
       <span className="relative inline-block">
-        <SafeLatex tex={middle} className="text-error font-bold" />
+        <ResultLineRenderer line={middle} className="text-error font-bold" />
         <span aria-hidden className="pointer-events-none absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-error/80 rounded" />
       </span>
-      {after.trim() && <SafeLatex tex={after} className="text-on-surface" />}
+      {after.trim() && <ResultLineRenderer line={after} className="text-on-surface" />}
     </span>
   );
 }
@@ -160,8 +170,39 @@ export default function CheckResult({
           <div className="min-w-0 flex-1">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-tertiary">{t("finalAnswerShould", lang)}</div>
             <div className="mt-0.5 text-lg text-on-surface">
-              <SafeLatex tex={result.finalAnswer} />
+              <ResultLineRenderer line={result.finalAnswer} />
             </div>
+            {(() => {
+              const q = parseQuantity(result.finalAnswer);
+              if (q && q.displayUnit) {
+                const alts = alternativesFor(q.displayUnit);
+                const otherAlts = alts.filter((u) => u.symbol !== q.displayUnit).slice(0, 3);
+                if (otherAlts.length > 0) {
+                  return (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-outline/80">
+                      <span>{lang === "he" ? "או כ-" : "or as: "}</span>
+                      {otherAlts.map((alt, idx) => {
+                        const m = /^\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/.exec(result.finalAnswer || "");
+                        const origValInUnit = m ? parseFloat(m[1]) : q.value;
+                        let convertedVal: number;
+                        try {
+                          convertedVal = convert(origValInUnit, q.displayUnit!, alt.symbol);
+                        } catch {
+                          return null;
+                        }
+                        return (
+                          <span key={alt.symbol} className="flex items-center gap-1">
+                            {idx > 0 && <span className="select-none text-outline/40">=</span>}
+                            <UnitTag value={convertedVal} unit={alt.symbol} size="sm" />
+                          </span>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+              }
+              return null;
+            })()}
           </div>
         </div>
       )}
@@ -304,7 +345,7 @@ function WorkedSolution({ steps, lang }: { steps: { math: string; explain: strin
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-lg text-on-surface">
-                  <SafeLatex tex={s.math} />
+                  <ResultLineRenderer line={s.math} />
                 </div>
                 {s.explain && (
                   <p className="mt-1 text-sm text-on-surface-variant" dir="auto">
@@ -342,7 +383,7 @@ function ExerciseLine({
           <div className="text-lg leading-tight">
             {isBad
               ? <LineWithSnippetMark line={line} snippet={err?.wrongSnippet} />
-              : <SafeLatex tex={line} className="text-on-surface" />}
+              : <ResultLineRenderer line={line} className="text-on-surface" />}
           </div>
 
           {/* Per-error reveal */}
@@ -376,7 +417,7 @@ function ExerciseLine({
                     {t("tryThisInstead", lang)}
                   </div>
                   <div className="text-lg text-emerald-900">
-                    <SafeLatex tex={err.correctedLine} />
+                    <ResultLineRenderer line={err.correctedLine} />
                   </div>
                   {err.hints.l3 && (
                     <p className="mt-1 text-xs text-emerald-800" dir="auto"><MathText>{err.hints.l3}</MathText></p>

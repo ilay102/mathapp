@@ -21,21 +21,32 @@ type Props = {
   className?: string;
   initialStrokes?: Stroke[];
   onChange?: (strokes: Stroke[]) => void;
+  mode?: "draw" | "erase";
 };
 
 const MathCanvas = forwardRef<MathCanvasHandle, Props>(function MathCanvas(
-  { height = 500, color = "#111", size = 3, className = "", initialStrokes, onChange },
+  { height = 500, color = "#111", size = 3, className = "", initialStrokes, onChange, mode = "draw" },
   ref,
 ) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [strokes, setStrokes] = useState<Stroke[]>(initialStrokes ?? []);
   const drawing = useRef<Stroke | null>(null);
+  const isErasing = useRef(false);
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
 
   useEffect(() => {
     if (initialStrokes) {
-      setStrokes(initialStrokes);
+      setStrokes((prev) => {
+        if (prev === initialStrokes) return prev;
+        if (
+          prev.length === initialStrokes.length &&
+          (prev.length === 0 || prev[prev.length - 1].id === initialStrokes[initialStrokes.length - 1].id)
+        ) {
+          return prev;
+        }
+        return initialStrokes;
+      });
     }
   }, [initialStrokes]);
 
@@ -95,12 +106,41 @@ const MathCanvas = forwardRef<MathCanvasHandle, Props>(function MathCanvas(
     };
   };
 
+  const eraseAt = (e: PointerEvent | React.PointerEvent) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const nextStrokes = strokes.filter((s) => {
+      const bbox = strokeBBox(s);
+      const pad = 15;
+      if (x >= bbox.minX - pad && x <= bbox.maxX + pad && y >= bbox.minY - pad && y <= bbox.maxY + pad) {
+        return !s.points.some((p) => {
+          const dx = p.x - x;
+          const dy = p.y - y;
+          return dx * dx + dy * dy < 25 * 25; // 25px threshold
+        });
+      }
+      return true;
+    });
+
+    if (nextStrokes.length !== strokes.length) {
+      setStrokes(nextStrokes);
+      onChange?.(nextStrokes);
+    }
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    // Palm rejection: ignore touch when a pen is the primary input device option.
-    // Accept pen always, mouse always, touch only if no pen has been seen recently.
     if (e.pointerType === "touch" && lastPenAt.current && performance.now() - lastPenAt.current < 1500) return;
     if (e.pointerType === "pen") lastPenAt.current = performance.now();
-    try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* synthetic events + some drivers reject; safe to ignore */ }
+    try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* ignore */ }
+
+    if (mode === "erase") {
+      isErasing.current = true;
+      eraseAt(e);
+      return;
+    }
+
     drawing.current = {
       id: newStrokeId(),
       points: [localPoint(e)],
@@ -113,6 +153,12 @@ const MathCanvas = forwardRef<MathCanvasHandle, Props>(function MathCanvas(
   const lastPenAt = useRef<number | null>(null);
 
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (mode === "erase") {
+      if (isErasing.current) {
+        eraseAt(e);
+      }
+      return;
+    }
     if (!drawing.current) return;
     const native = e.nativeEvent;
     const events = typeof native.getCoalescedEvents === "function" ? native.getCoalescedEvents() : [native];
@@ -123,6 +169,10 @@ const MathCanvas = forwardRef<MathCanvasHandle, Props>(function MathCanvas(
   };
 
   const onPointerUp = () => {
+    if (mode === "erase") {
+      isErasing.current = false;
+      return;
+    }
     if (!drawing.current) return;
     const finished = drawing.current;
     drawing.current = null;
@@ -154,7 +204,6 @@ const MathCanvas = forwardRef<MathCanvasHandle, Props>(function MathCanvas(
       const lines = groupStrokesIntoLines(strokes, 50);
       const out: string[] = [];
       for (const lineStrokes of lines) {
-        // bounding box across all strokes on this line
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         for (const s of lineStrokes) {
           const bb = strokeBBox(s);
@@ -167,7 +216,6 @@ const MathCanvas = forwardRef<MathCanvasHandle, Props>(function MathCanvas(
         const w = Math.max(64, Math.ceil(maxX - minX + pad * 2));
         const h = Math.max(48, Math.ceil(maxY - minY + pad * 2));
         const lineCanvas = document.createElement("canvas");
-        // Render at 2x for clarity, then thicker strokes for OCR
         const scale = 2;
         lineCanvas.width = w * scale;
         lineCanvas.height = h * scale;
@@ -203,6 +251,11 @@ const MathCanvas = forwardRef<MathCanvasHandle, Props>(function MathCanvas(
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        style={{
+          cursor: mode === "erase"
+            ? `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="%23374151" stroke-width="1.5" fill="white" fill-opacity="0.75"/></svg>') 12 12, auto`
+            : "crosshair",
+        }}
       />
     </div>
   );

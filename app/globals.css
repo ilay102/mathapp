@@ -135,6 +135,47 @@ canvas { touch-action: none; }
     0 6px 18px -6px rgba(0, 0, 0, 0.08);
 }
 
+/* Full-bleed notebook paper — fills the whole editor pane, no border/shadow.
+   Same rule spacing as .notebook-page so canvas strokes and ruled lines align. */
+.notebook-paper-bleed {
+  background-color: #fffdf7;
+  background-image:
+    linear-gradient(to right, transparent 0, transparent 80px,
+      rgba(220, 38, 38, 0.28) 80px, rgba(220, 38, 38, 0.28) 81px,
+      transparent 81px),
+    repeating-linear-gradient(to bottom, transparent 0, transparent 31px,
+      rgba(96, 130, 200, 0.22) 31px, rgba(96, 130, 200, 0.22) 32px);
+}
+
+/* Floating glassmorphism toolbar — sits on top of the paper */
+.tool-glass {
+  background: rgba(255, 255, 253, 0.78);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+/* Floating Action Button (Check my work) */
+.check-fab {
+  background: linear-gradient(135deg, #003fd2 0%, #8455ef 60%, #0EA5E9 100%);
+  color: #ffffff;
+  box-shadow:
+    0 12px 32px -8px rgba(132, 85, 239, 0.45),
+    0 4px 8px -2px rgba(0, 63, 210, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  transition: transform 180ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+.check-fab:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 18px 40px -8px rgba(132, 85, 239, 0.55),
+    0 6px 12px -2px rgba(0, 63, 210, 0.30),
+    0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+  filter: brightness(1.05);
+}
+.check-fab:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.3); }
+
 /* Highlighter underline for marking the wrong step */
 .error-mark {
   position: relative;

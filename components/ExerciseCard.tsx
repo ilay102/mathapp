@@ -113,43 +113,22 @@ export default function ExerciseCard({
   const hasMultipleParts = exercise.parts.length > 1;
 
   return (
-    <article className="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest shadow-sm overflow-hidden">
-      <header className="flex items-center justify-between border-b border-outline-variant/40 bg-surface-container-low/60 px-5 py-3">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-on-primary font-bold text-sm">
-            {index + 1}
-          </span>
-          <span className="text-sm font-semibold text-on-surface">
-            {lang === "he" ? "תרגיל" : "Exercise"} {index + 1}
-            {hasMultipleParts && (
-              <span className="ml-2 text-on-surface-variant font-normal">
-                · {exercise.parts.length} {lang === "he" ? "סעיפים" : "parts"}
-              </span>
-            )}
-          </span>
-        </div>
-        <button onClick={onRemove} className="text-on-surface-variant hover:text-error transition-colors" title={lang === "he" ? "הסר תרגיל" : "Remove exercise"}>
-          <span className="material-symbols-outlined">delete_outline</span>
-        </button>
-      </header>
-
-      {/* Umbrella question */}
-      <section className="border-b border-outline-variant/30 px-5 py-4 space-y-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-          {t("question", lang)}
-        </div>
+    <article className="space-y-8">
+      {/* Problem — sits at the top of the page like a header you'd write yourself.
+          No card, no label, no border. The placement IS the meaning. */}
+      <section className="space-y-3">
         {exercise.problemImage && (
-          <div className="relative">
-            <img src={exercise.problemImage} alt="" className="max-h-[280px] w-auto rounded-md border border-outline-variant/40" />
+          <div className="relative inline-block">
+            <img src={exercise.problemImage} alt="" className="max-h-[240px] w-auto rounded-md shadow-sm" />
             <button
               onClick={() => { update({ problemImage: null }); setImageOcrText(null); }}
-              className="absolute top-2 right-2 rounded-full bg-white/90 p-1 text-on-surface-variant shadow hover:text-error"
+              className="absolute -top-2 -right-2 rounded-full bg-white/95 p-1 text-on-surface-variant shadow hover:text-error border border-outline-variant/40"
               title={lang === "he" ? "הסר תמונה" : "Remove screenshot"}
             >
               <span className="material-symbols-outlined text-sm">close</span>
             </button>
             {imageOcrLoading && (
-              <div className="mt-1 text-[11px] text-on-surface-variant">{t("reading", lang)}</div>
+              <div className="mt-1 text-[11px] text-on-surface-variant italic">{t("reading", lang)}</div>
             )}
           </div>
         )}
@@ -157,28 +136,33 @@ export default function ExerciseCard({
           value={exercise.problemText}
           onChange={(e) => { update({ problemText: e.target.value }); }}
           rows={2}
-          className="w-full resize-none bg-transparent text-lg note-title text-on-surface placeholder:text-outline focus:outline-none"
+          className="w-full resize-none bg-transparent note-title text-on-surface placeholder:text-outline/60 focus:outline-none text-2xl sm:text-3xl font-semibold leading-snug"
           placeholder={exercise.problemImage ? t("problemPlaceholderWithImage", lang) : t("problemPlaceholder", lang)}
           dir="auto"
         />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <input
             ref={fileInputRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) attachImage(f); e.target.value = ""; }}
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container"
+            className="inline-flex items-center gap-1 rounded-full bg-white/60 hover:bg-white px-2.5 py-1 text-on-surface-variant border border-outline-variant/40 transition-colors"
           >
             <span className="material-symbols-outlined text-sm">add_photo_alternate</span>
             {exercise.problemImage ? t("replaceScreenshot", lang) : t("uploadScreenshot", lang)}
           </button>
-          {ocrErr && <span className="text-xs text-error">{ocrErr}</span>}
+          {hasMultipleParts && (
+            <span className="text-[10px] text-outline/60 uppercase tracking-wider font-semibold">
+              {exercise.parts.length} {lang === "he" ? "סעיפים" : "parts"}
+            </span>
+          )}
+          {ocrErr && <span className="text-error">{ocrErr}</span>}
         </div>
       </section>
 
-      {/* Parts */}
-      <div className="space-y-3 p-5">
+      {/* Parts — flow down the page, no separators */}
+      <div className="space-y-10">
         {exercise.parts.map((p, i) => (
           <PartCard
             key={p.id}
@@ -195,7 +179,7 @@ export default function ExerciseCard({
 
         <button
           onClick={addPart}
-          className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-outline-variant px-4 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container hover:text-primary hover:border-primary transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/40 hover:bg-white px-3 py-1.5 text-xs text-on-surface-variant hover:text-primary border border-outline-variant/30 hover:border-primary/40 transition-colors"
         >
           <span className="material-symbols-outlined text-sm">add</span>
           {t("addPart", lang)}

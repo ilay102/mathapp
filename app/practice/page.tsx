@@ -49,7 +49,6 @@ export default function PracticePage() {
       if (!json.ok) throw new Error(json.error || "Check failed");
       const r = json.result as CheckResultData;
       setResult(r);
-      // Update the card via Leitner
       setDeck((prev) => prev.map((c) =>
         c.id === current.id ? applyVerdict(c, r.status === "correct" ? "correct" : "wrong") : c
       ));
@@ -58,8 +57,11 @@ export default function PracticePage() {
     } finally { setLoading(false); }
   }
 
+  // Refetches due list and goes to next card, or sets current to null if done
   function next() {
-    const remaining = due.filter((c) => c.id !== current?.id);
+    const freshDeck = loadDeck(); // reload deck to get latest dates
+    const freshDue = dueCards(freshDeck);
+    const remaining = freshDue.filter((c) => c.id !== current?.id);
     setCurrent(remaining[0] ?? null);
     setAnswer("");
     setResult(null);
@@ -67,60 +69,82 @@ export default function PracticePage() {
   }
 
   function removeFromDeck(id: string) {
+    const confirmMsg = lang === "he" ? "להסיר תרגיל זה מהרשימה לשינון?" : "Remove this exercise from practice deck?";
+    if (!window.confirm(confirmMsg)) return;
     setDeck((prev) => prev.filter((c) => c.id !== id));
-    if (current?.id === id) next();
+    if (current?.id === id) {
+      const remaining = due.filter((c) => c.id !== id);
+      setCurrent(remaining[0] ?? null);
+      setAnswer("");
+      setResult(null);
+      setError(null);
+    }
   }
 
   const isRtl = lang === "he";
 
   return (
-    <div className="min-h-screen bg-background" dir={isRtl ? "rtl" : "ltr"}>
-      <header className="sticky top-0 z-20 border-b border-outline-variant/60 bg-surface-container-lowest/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
+    <div className="min-h-screen bg-[#f8f9fa] text-on-surface animate-fade-in" dir={isRtl ? "rtl" : "ltr"}>
+      {/* Sticky top sub-header */}
+      <header className="sticky top-0 z-20 border-b border-outline-variant/40 bg-surface-container-lowest/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary-container text-on-secondary">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-white shadow-lg shadow-secondary/20">
+              <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
             </div>
             <div>
-              <h1 className="note-title text-xl font-semibold text-on-surface leading-none">{t("practice", lang)}</h1>
-              <p className="mt-0.5 text-[11px] uppercase tracking-wider text-on-surface-variant">
+              <h1 className="note-title text-2xl font-bold text-on-surface leading-none">{t("practice", lang)}</h1>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-outline font-bold">
                 {stats.due} {t("dueToday", lang)} · {stats.total} total
               </p>
             </div>
           </div>
-          <Link href="/notebooks" className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container">
-            <span className="material-symbols-outlined text-sm">menu_book</span>
+          <Link 
+            href="/notebooks" 
+            className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant/60 bg-surface-container-low px-4.5 py-2.5 text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-all hover:scale-105 active:scale-95 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-base">menu_book</span>
             {t("notebook2", lang)}
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-6 space-y-6">
-        {/* Empty state */}
+      <main className="mx-auto max-w-4xl px-5 py-8 space-y-6">
+        {/* EMPTY STATE */}
         {deck.length === 0 && (
-          <div className="rounded-2xl border-2 border-dashed border-outline-variant/60 bg-surface-container-low/40 p-8 text-center">
-            <span className="material-symbols-outlined text-4xl text-outline">school</span>
-            <p className="mt-3 text-sm text-on-surface-variant" dir="auto">{t("emptyDeck", lang)}</p>
-            <Link href="/notebooks" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary hover:bg-primary/90">
-              <span className="material-symbols-outlined text-sm">arrow_back</span>
+          <div className="rounded-3xl border-2 border-dashed border-outline-variant/60 bg-surface-container-low/40 p-12 text-center max-w-md mx-auto space-y-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10 text-secondary mx-auto">
+              <span className="material-symbols-outlined text-4xl">school</span>
+            </div>
+            <p className="text-sm font-semibold text-on-surface-variant leading-relaxed" dir="auto">{t("emptyDeck", lang)}</p>
+            <Link 
+              href="/notebooks" 
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold text-on-primary hover:bg-primary/95 transition-all shadow-sm"
+            >
+              <span className="material-symbols-outlined text-base">arrow_back</span>
               {t("notebook2", lang)}
             </Link>
           </div>
         )}
 
-        {/* Deck summary + start */}
+        {/* DECK SUMMARY PANEL */}
         {deck.length > 0 && !current && (
-          <section className="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
-            <h2 className="text-lg font-semibold note-title text-on-surface">{t("practice", lang)}</h2>
-            <p className="mt-1 text-sm text-on-surface-variant">
-              {stats.due} {t("dueToday", lang)} · {stats.total - stats.due} {t("scheduled", lang) ?? "scheduled"}
-            </p>
+          <section className="rounded-3xl border border-outline-variant/40 bg-surface-container-lowest p-6 sm:p-8 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-xl font-bold note-title text-on-surface">{t("practice", lang)}</h2>
+              <p className="mt-1 text-xs text-on-surface-variant font-medium">
+                {stats.due} {t("dueToday", lang)} · {stats.total - stats.due} {t("scheduled", lang) ?? "scheduled"}
+              </p>
+            </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {/* Techniques grids */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {Object.entries(stats.byTech).map(([tech, s]) => (
-                <div key={tech} className="rounded-lg border border-outline-variant/40 bg-surface-container-low p-2">
-                  <div className="text-[11px] uppercase tracking-wider text-on-surface-variant">{tech}</div>
-                  <div className="text-sm font-semibold text-on-surface">{s.mastered}/{s.total} {t("mastered", lang)}</div>
+                <div key={tech} className="rounded-2xl border border-outline-variant/40 bg-surface-container-low/50 p-4 space-y-1">
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-outline truncate">{tech}</div>
+                  <div className="text-xs font-bold text-on-surface">
+                    {s.mastered}/{s.total} {t("mastered", lang)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -128,77 +152,118 @@ export default function PracticePage() {
             <button
               onClick={startSession}
               disabled={stats.due === 0}
-              className="ai-glow mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-secondary disabled:opacity-40"
+              className="ai-glow inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-secondary disabled:opacity-40 disabled:scale-100 transition-all hover:scale-105 active:scale-95"
             >
-              <span className="material-symbols-outlined">play_arrow</span>
+              <span className="material-symbols-outlined text-lg">play_arrow</span>
               {t("startSession", lang)}
             </button>
 
-            <ol className="mt-5 space-y-2 text-sm">
-              {deck.slice(0, 20).map((c) => (
-                <li key={c.id} className="flex items-start justify-between gap-3 rounded-lg border border-outline-variant/30 bg-surface-container-low/30 p-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-on-surface" dir="auto">{c.problem}</p>
-                    <div className="mt-1 flex flex-wrap gap-2 text-[10px] uppercase tracking-wider text-on-surface-variant">
-                      {c.technique && <span className="rounded-full bg-secondary-fixed px-2 py-0.5 text-secondary">{c.technique}</span>}
-                      <span>level {c.level}/5</span>
-                      <span>{c.dueAt <= Date.now() ? t("dueToday", lang) : `due ${new Date(c.dueAt).toLocaleDateString()}`}</span>
+            <div className="border-t border-outline-variant/20 pt-6 space-y-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-outline">
+                {isRtl ? "כרטיסיות בחפיסה" : "Cards in Deck"}
+              </div>
+              <ol className="space-y-3">
+                {deck.slice(0, 20).map((c) => (
+                  <li key={c.id} className="flex items-start justify-between gap-4 rounded-2xl border border-outline-variant/30 bg-surface-container-low/20 p-4 hover:border-outline-variant/60 transition-all group">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <p className="text-sm font-semibold text-on-surface leading-snug" dir="auto">{c.problem}</p>
+                      <div className="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-wider">
+                        {c.technique && <span className="rounded-lg bg-secondary/10 px-2 py-0.5 text-secondary">{c.technique}</span>}
+                        <span className="rounded-lg bg-surface-container px-2 py-0.5 text-outline">level {c.level}/5</span>
+                        <span className="rounded-lg bg-surface-container px-2 py-0.5 text-outline">
+                          {c.dueAt <= Date.now() ? t("dueToday", lang) : `due ${new Date(c.dueAt).toLocaleDateString()}`}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <button onClick={() => removeFromDeck(c.id)} className="text-on-surface-variant hover:text-error" title="Remove">
-                    <span className="material-symbols-outlined text-base">delete_outline</span>
-                  </button>
-                </li>
-              ))}
-            </ol>
+                    <button 
+                      onClick={() => removeFromDeck(c.id)} 
+                      className="text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-surface-container" 
+                      title="Remove"
+                    >
+                      <span className="material-symbols-outlined text-base">delete_outline</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </section>
         )}
 
-        {/* Active practice card */}
+        {/* ACTIVE PRACTICE WORKSPACE */}
         {current && (
-          <section className="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-secondary">
-                {current.technique || "practice"} · level {current.level}/5
+          <section className="rounded-3xl border border-outline-variant/40 bg-surface-container-lowest p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between border-b border-outline-variant/10 pb-4">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
+                {current.technique || "spaced review"} · level {current.level}/5
               </span>
-              <button onClick={next} className="text-sm text-on-surface-variant hover:text-primary">
-                skip →
+              <button 
+                onClick={next} 
+                className="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors inline-flex items-center gap-0.5"
+              >
+                <span>{isRtl ? "דלג" : "skip"}</span>
+                <span className="material-symbols-outlined text-sm font-bold">
+                  {isRtl ? "arrow_left" : "arrow_right"}
+                </span>
               </button>
             </div>
-            <div className="rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-4 note-title text-lg text-on-surface" dir="auto">
+
+            {/* Problem card rendered like notebook paper */}
+            <div className="rounded-2xl border border-outline-variant/50 bg-[#fffdf7] p-5 note-title text-xl font-bold text-on-surface shadow-sm" dir="auto">
               {current.problem}
             </div>
-            <textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              rows={6}
-              className="handwritten w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-lowest p-3 text-xl leading-relaxed text-on-surface focus:border-primary focus:outline-none"
-              placeholder={t("oneStepPerLine", lang)}
-              dir="auto"
-            />
-            <div className="flex items-center gap-3">
+
+            {/* Input steps */}
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-outline">
+                {t("oneStepPerLine", lang)}
+              </div>
+              <textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                rows={6}
+                className="notebook-textarea w-full resize-y"
+                placeholder={t("oneStepPerLine", lang)}
+                dir="auto"
+              />
+            </div>
+
+            {/* Buttons and warnings */}
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={check}
                 disabled={loading}
-                className="ai-glow inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-secondary disabled:opacity-50"
+                className="ai-glow inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold text-secondary disabled:opacity-50 hover:scale-105 active:scale-95 transition-all"
               >
                 <span className="material-symbols-outlined">{loading ? "hourglass_top" : "plagiarism"}</span>
                 {loading ? t("checking", lang) : t("showAllMistakes", lang)}
               </button>
               {result && (
-                <button onClick={next} className="rounded-full border border-outline-variant px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container">
-                  next →
+                <button 
+                  onClick={next} 
+                  className="rounded-full border border-outline-variant/60 bg-surface-container px-5 py-2.5 text-xs font-bold text-on-surface hover:bg-surface-container-high transition-all hover:scale-105 active:scale-95 shadow-sm"
+                >
+                  {isRtl ? "המשך ←" : "continue →"}
                 </button>
               )}
-              {error && <span className="text-sm text-error">{error}</span>}
+              {error && (
+                <span className="text-sm text-error flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  {error}
+                </span>
+              )}
             </div>
+
+            {/* Result grading */}
             {result && (
-              <CheckResult
-                result={result}
-                studentLines={answer.split("\n").map((s) => s.trim()).filter(Boolean)}
-                problem={current.problem}
-                lang={lang}
-              />
+              <div className="pt-4 border-t border-outline-variant/20">
+                <CheckResult
+                  result={result}
+                  studentLines={answer.split("\n").map((s) => s.trim()).filter(Boolean)}
+                  problem={current.problem}
+                  lang={lang}
+                />
+              </div>
             )}
           </section>
         )}

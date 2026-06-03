@@ -2,6 +2,19 @@
 
 import { useState } from "react";
 import type { Lang } from "@/lib/i18n";
+import { convert } from "@/lib/units";
+
+const symbolMap: Record<string, string> = {
+  "um": "μm",
+  "dyn": "dyn",
+  "lbf": "lbf",
+  "kgf": "kgf",
+  "BTU/h": "BTU/h",
+  "mmHg": "mmHg",
+  "C": "°C",
+  "F": "°F",
+  "K": "K"
+};
 
 type Props = { lang: Lang };
 
@@ -113,19 +126,12 @@ export default function UnitConverter({ lang }: Props) {
 
   // Conversion logic
   let result: number;
-  if (cat.name === "Temperature") {
-    // Temperature needs special handling
-    let celsius: number;
-    if (from.id === "C") celsius = val;
-    else if (from.id === "K") celsius = val - 273.15;
-    else celsius = (val - 32) * (5 / 9); // F
-
-    if (to.id === "C") result = celsius;
-    else if (to.id === "K") result = celsius + 273.15;
-    else result = celsius * (9 / 5) + 32; // F
-  } else {
-    const baseVal = val * from.toBase;
-    result = baseVal / to.toBase;
+  try {
+    const fromSymbol = symbolMap[from.id] || from.id;
+    const toSymbol = symbolMap[to.id] || to.id;
+    result = convert(val, fromSymbol, toSymbol);
+  } catch (e) {
+    result = NaN;
   }
 
   const handleCategoryChange = (idx: number) => {
@@ -141,85 +147,140 @@ export default function UnitConverter({ lang }: Props) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       {/* Title */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-          <span className="material-symbols-outlined">straighten</span>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
+          <span className="material-symbols-outlined text-2xl">straighten</span>
         </div>
-        <h2 className="note-title text-xl font-bold text-on-surface">
-          {isRtl ? "ממיר יחידות" : "Unit Converter"}
-        </h2>
+        <div>
+          <h2 className="note-title text-2xl font-bold text-on-surface">
+            {isRtl ? "ממיר יחידות" : "Unit Converter"}
+          </h2>
+          <p className="text-xs text-on-surface-variant">
+            {isRtl ? "המרת יחידות פיזיקליות והנדסיות במהירות ודייקנות" : "Convert standard physical and engineering dimensions instantly"}
+          </p>
+        </div>
       </div>
 
       {/* Category Tabs */}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2 border-b border-outline-variant/20 pb-4">
         {CATEGORIES.map((c, i) => (
           <button
             key={c.name}
             onClick={() => handleCategoryChange(i)}
-            className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-              catIdx === i ? "bg-primary text-on-primary shadow-sm" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-all border ${
+              catIdx === i 
+                ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 shadow-sm" 
+                : "bg-surface-container-lowest border-outline-variant/40 hover:bg-surface-container-low text-on-surface-variant"
             }`}
           >
-            <span className="material-symbols-outlined text-sm">{c.icon}</span>
+            <span className="material-symbols-outlined text-base">{c.icon}</span>
             {isRtl ? c.nameHe : c.name}
           </button>
         ))}
       </div>
 
-      {/* Converter */}
-      <div className="rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          {/* From */}
-          <div className="flex-1 w-full space-y-2">
-            <select
-              value={fromIdx}
-              onChange={(e) => setFromIdx(parseInt(e.target.value))}
-              className="w-full rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
-            >
-              {cat.units.map((u, i) => (
-                <option key={u.id} value={i}>{isRtl ? u.labelHe : u.label}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              step="any"
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              className="w-full rounded-xl border-2 border-primary/30 bg-surface-container-lowest px-4 py-3 text-xl font-mono font-bold text-on-surface focus:border-primary focus:outline-none text-center"
-            />
+      {/* Converter Workspace */}
+      <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="flex flex-col lg:flex-row items-center gap-6">
+          {/* FROM CARD */}
+          <div className="flex-1 w-full rounded-2xl bg-surface-container-low/40 p-6 border border-outline-variant/20 shadow-inner space-y-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-outline block">
+              {isRtl ? "ממקור" : "From Source"}
+            </span>
+            
+            {/* Custom Select Box */}
+            <div className="relative">
+              <select
+                value={fromIdx}
+                onChange={(e) => setFromIdx(parseInt(e.target.value))}
+                className="w-full appearance-none rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-4 py-3 text-sm font-semibold text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer transition-all"
+                style={{ paddingRight: isRtl ? "1rem" : "2.5rem", paddingLeft: isRtl ? "2.5rem" : "1rem" }}
+              >
+                {cat.units.map((u, i) => (
+                  <option key={u.id} value={i}>{isRtl ? u.labelHe : u.label}</option>
+                ))}
+              </select>
+              <div className={`pointer-events-none absolute inset-y-0 flex items-center text-outline ${isRtl ? "left-3" : "right-3"}`}>
+                <span className="material-symbols-outlined text-lg">unfold_more</span>
+              </div>
+            </div>
+
+            <div className="relative">
+              <input
+                type="number"
+                step="any"
+                value={inputVal}
+                onChange={(e) => setInputVal(e.target.value)}
+                className="w-full rounded-xl border-2 border-primary/20 bg-surface-container-lowest px-4 py-4 text-2xl font-mono font-bold text-on-surface text-center focus:border-primary focus:outline-none transition-all shadow-sm"
+              />
+            </div>
           </div>
 
-          {/* Swap button */}
+          {/* SWAP ACTION BUTTON */}
           <button
             onClick={swap}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-on-primary-container hover:bg-primary-container/80 active:scale-90 transition-all shadow-sm shrink-0"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white hover:bg-emerald-600 active:scale-90 transition-all shadow-md shadow-emerald-500/20 shrink-0 group"
+            title={isRtl ? "החלף כיוון" : "Swap direction"}
           >
-            <span className="material-symbols-outlined">swap_horiz</span>
+            <span className="material-symbols-outlined text-xl transition-transform duration-300 group-hover:rotate-180">
+              swap_horiz
+            </span>
           </button>
 
-          {/* To */}
-          <div className="flex-1 w-full space-y-2">
-            <select
-              value={toIdx}
-              onChange={(e) => setToIdx(parseInt(e.target.value))}
-              className="w-full rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
-            >
-              {cat.units.map((u, i) => (
-                <option key={u.id} value={i}>{isRtl ? u.labelHe : u.label}</option>
-              ))}
-            </select>
-            <div className="w-full rounded-xl border-2 border-emerald-300/60 bg-emerald-50/40 px-4 py-3 text-xl font-mono font-bold text-emerald-800 text-center min-h-[52px]">
+          {/* TO CARD */}
+          <div className="flex-1 w-full rounded-2xl bg-emerald-500/5 p-6 border border-emerald-500/20 shadow-inner space-y-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+              {isRtl ? "ליעד" : "To Destination"}
+            </span>
+
+            {/* Custom Select Box */}
+            <div className="relative">
+              <select
+                value={toIdx}
+                onChange={(e) => setToIdx(parseInt(e.target.value))}
+                className="w-full appearance-none rounded-xl border border-emerald-500/30 bg-surface-container-lowest px-4 py-3 text-sm font-semibold text-emerald-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 cursor-pointer transition-all"
+                style={{ paddingRight: isRtl ? "1rem" : "2.5rem", paddingLeft: isRtl ? "2.5rem" : "1rem" }}
+              >
+                {cat.units.map((u, i) => (
+                  <option key={u.id} value={i}>{isRtl ? u.labelHe : u.label}</option>
+                ))}
+              </select>
+              <div className={`pointer-events-none absolute inset-y-0 flex items-center text-emerald-700 ${isRtl ? "left-3" : "right-3"}`}>
+                <span className="material-symbols-outlined text-lg">unfold_more</span>
+              </div>
+            </div>
+
+            <div className="w-full rounded-xl border-2 border-emerald-500/30 bg-surface-container-lowest px-4 py-4 text-2xl font-mono font-bold text-emerald-600 text-center select-all flex items-center justify-center min-h-[68px] shadow-sm">
               {fmtResult(result)}
             </div>
           </div>
         </div>
 
-        {/* Formula */}
-        <div className="mt-4 text-center text-xs text-on-surface-variant font-mono">
-          1 {from.id} = {fmtResult(from.toBase / to.toBase)} {to.id}
-          {cat.name === "Temperature" && <span className="ml-2 text-outline">(special conversion)</span>}
+        {/* Dynamic scaling scale / conversion formula */}
+        <div className="mt-8 pt-4 border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between text-xs text-on-surface-variant font-medium gap-3">
+          <div className="flex items-center gap-1 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/10 font-mono">
+            <span>1 {from.id}</span>
+            <span>=</span>
+            <span className="font-bold text-primary">
+              {(() => {
+                try {
+                  const fromSymbol = symbolMap[from.id] || from.id;
+                  const toSymbol = symbolMap[to.id] || to.id;
+                  return fmtResult(convert(1, fromSymbol, toSymbol));
+                } catch {
+                  return "—";
+                }
+              })()}
+            </span>
+            <span>{to.id}</span>
+          </div>
+          {cat.name === "Temperature" && (
+            <span className="text-[10px] text-amber-600 bg-amber-500/10 px-2 py-1 rounded-md font-semibold">
+              {isRtl ? "ממיר טמפרטורה משתמש בנוסחה ליניארית מותאמת" : "Temperature uses linear scale offsets"}
+            </span>
+          )}
         </div>
       </div>
     </div>

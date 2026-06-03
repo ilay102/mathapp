@@ -31,29 +31,33 @@ export default function LandingPage() {
   return (
     <div
       dir={isRtl ? "rtl" : "ltr"}
-      className="min-h-screen bg-[#f8f9fa] text-on-surface flex flex-col justify-between pb-12"
+      className="min-h-screen bg-[#f8f9fa] text-on-surface flex flex-col justify-between pb-16 relative overflow-hidden"
     >
+      {/* Decorative background blobs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-gradient-to-tr from-secondary/10 to-transparent blur-3xl pointer-events-none" />
+
       {/* Hero section */}
-      <section className="mx-auto max-w-5xl px-5 pt-8 sm:pt-16 space-y-8 text-center flex flex-col items-center">
+      <section className="mx-auto max-w-5xl px-5 pt-12 sm:pt-20 space-y-8 text-center flex flex-col items-center relative z-10">
         {/* Animated Badge */}
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary animate-pulse shadow-sm">
-          <span className="material-symbols-outlined text-sm font-bold">star</span>
+        <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-outline-variant/30 px-4.5 py-2 text-xs font-bold text-primary shadow-sm hover:scale-105 transition-transform">
+          <span className="material-symbols-outlined text-sm font-bold animate-pulse text-secondary">grade</span>
           <span>{isRtl ? "סביבת הלימודים המושלמת להנדסה" : "The Ultimate Engineering Study Environment"}</span>
         </div>
 
         {/* Hero Title */}
-        <h1 className="note-title text-4xl sm:text-6xl font-black text-on-surface leading-tight tracking-tight max-w-3xl">
+        <h1 className="note-title text-4xl sm:text-7xl font-black text-on-surface leading-tight tracking-tight max-w-4xl">
           {isRtl ? (
             <>
               כתוב מתמטיקה בכתב יד. <br />
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-secondary to-purple-600 bg-clip-text text-transparent">
                 מצא איפה טעית, ותקן.
               </span>
             </>
           ) : (
             <>
               Write Math by Hand. <br />
-              <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-secondary to-purple-600 bg-clip-text text-transparent">
                 Find where you went wrong.
               </span>
             </>
@@ -61,48 +65,48 @@ export default function LandingPage() {
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="text-sm sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
+        <p className="text-sm sm:text-lg text-on-surface-variant max-w-3xl leading-relaxed font-medium">
           {isRtl
             ? "MathPad מספקת משוב מיידי שורה אחר שורה על פתרונות מתמטיקה ופיזיקה. בדיקה מבוססת AI, נוסחאות מובנות וסימולטור מבחנים."
-            : "MathPad gives engineering students step-by-step grading on hand-written calculus, algebra, and physics. Harness Leitner retention and exam simulation."}
+            : "MathPad gives engineering students step-by-step grading on handwritten calculus, algebra, and physics. Harness Leitner retention, mock exams, and coordinates visualizers."}
         </p>
 
         {/* Call to Actions */}
         <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
           <Link
             href="/notebooks"
-            className="ai-glow inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-bold text-secondary shadow-md hover:scale-105 active:scale-95 transition-all"
+            className="ai-glow inline-flex items-center gap-2 rounded-full px-10 py-4 text-sm font-bold text-secondary shadow-lg hover:scale-105 active:scale-95 transition-all"
           >
             <span className="material-symbols-outlined font-bold">arrow_forward</span>
             <span>{isRtl ? "כניסה לאזור הלימוד" : "Enter Study Hub"}</span>
           </Link>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-6 py-3 text-sm font-semibold text-on-surface hover:bg-surface-container-high hover:scale-105 active:scale-95 transition-all"
+            className="inline-flex items-center gap-2 rounded-full border border-outline-variant/60 bg-surface-container px-7 py-4 text-sm font-bold text-on-surface hover:bg-surface-container-high hover:scale-105 active:scale-95 transition-all shadow-sm"
           >
-            <span className="material-symbols-outlined text-sm">login</span>
+            <span className="material-symbols-outlined text-sm font-bold">login</span>
             <span>{isRtl ? "התחברות לחשבון" : "Sign In"}</span>
           </Link>
         </div>
       </section>
 
       {/* Showcase / Sandbox */}
-      <section className="mx-auto max-w-3xl w-full px-5 pt-12 space-y-4">
-        <div className="text-center">
-          <h2 className="note-title text-2xl font-bold text-on-surface">
-            {isRtl ? "נסה בעצמך (ארגז חול)" : "Try it Yourself (Sandbox)"}
+      <section className="mx-auto max-w-4xl w-full px-5 pt-16 space-y-6 relative z-10">
+        <div className="text-center space-y-1">
+          <h2 className="note-title text-3xl font-extrabold text-on-surface">
+            {isRtl ? "נסה בעצמך (ארגז חול)" : "Interactive trial sandbox"}
           </h2>
-          <p className="text-xs text-on-surface-variant mt-1">
+          <p className="text-xs text-on-surface-variant max-w-lg mx-auto leading-relaxed">
             {isRtl
               ? "פתור את הנגזרת למטה בכתב יד או בהקלדה ובדוק את עצמך:"
-              : "Solve the derivative below by handwriting or typing, then tap Check:"}
+              : "Try writing or typing a derivation step-by-step below, then tap check to diagnose mistakes:"}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest shadow-md overflow-hidden">
-          <div className="border-b border-outline-variant/40 bg-surface-container-low/60 px-5 py-3 flex items-center justify-between">
-            <span className="text-sm font-bold text-on-surface flex items-center gap-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-on-primary text-[10px] font-bold">
+        <div className="rounded-3xl border border-outline-variant/40 bg-surface-container-lowest shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
+          <div className="border-b border-outline-variant/30 bg-surface-container-low/50 px-6 py-4 flex items-center justify-between">
+            <span className="text-sm font-bold text-on-surface flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold shadow-sm">
                 1
               </span>
               <span>{isRtl ? "שאלה לדוגמה" : "Sample Exercise"}</span>
@@ -110,17 +114,17 @@ export default function LandingPage() {
           </div>
 
           {/* Problem */}
-          <div className="px-5 py-4 border-b border-outline-variant/20 bg-surface-container-low/20">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-outline block mb-1">
+          <div className="px-6 py-5 border-b border-outline-variant/20 bg-surface-container-low/20">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">
               {t("question", lang)}
             </span>
-            <div className="text-lg font-bold text-on-surface" dir="ltr">
-              Differentiate f(x) = sin(x²)
+            <div className="text-xl font-bold text-on-surface" dir="ltr">
+              Differentiate <span className="font-serif italic font-medium text-primary">f(x) = sin(x²)</span>
             </div>
           </div>
 
           {/* PartCard */}
-          <div className="p-4 bg-[#fffefd]">
+          <div className="p-6 bg-surface-container-lowest">
             <PartCard
               part={sandboxPart}
               partIndex={0}
@@ -135,49 +139,48 @@ export default function LandingPage() {
       </section>
 
       {/* Features highlight grid */}
-      <section className="mx-auto max-w-5xl px-5 pt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-sm space-y-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <span className="material-symbols-outlined">folder</span>
-          </div>
-          <h3 className="note-title text-xl font-bold text-on-surface">
-            {isRtl ? "מחברות קורסים" : "Course Notebooks"}
-          </h3>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            {isRtl
-              ? "סדר את התרגילים לפי קורסים (אינפי, אלגברה לינארית, פיזיקה). הכל מסונכרן לענן באופן מאובטח."
-              : "Organize your calculations and assignments into clean notebooks by course. Everything is securely synced."}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-sm space-y-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
-            <span className="material-symbols-outlined">school</span>
-          </div>
-          <h3 className="note-title text-xl font-bold text-on-surface">
-            {isRtl ? "כרטיסיות לשינון" : "Spaced Repetition"}
-          </h3>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            {isRtl
-              ? "טעית בתרגיל? הוסף אותו בלחיצה אחת לחפיסת הלייטרנר כדי לחזור עליו בדיוק בזמן הנכון."
-              : "Made a mistake? Add it directly to your Leitner deck to review it at mathematically optimal intervals."}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-sm space-y-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-            <span className="material-symbols-outlined">assignment</span>
-          </div>
-          <h3 className="note-title text-xl font-bold text-on-surface">
-            {isRtl ? "סימולטור מבחנים" : "Exam Simulator"}
-          </h3>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            {isRtl
-              ? "התכונן למבחנים עם סימולציה מוגבלת בזמן. פתור מספר שאלות וקבל ציון ופירוט שגיאות רק בסוף."
-              : "Prepare with timed mock exams. Solve multiple problems, manage your time, and receive your grade at the end."}
-          </p>
-        </div>
+      <section className="mx-auto max-w-5xl px-5 pt-20 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+        <FeatureHighlightCard
+          icon="folder"
+          title={isRtl ? "מחברות קורסים" : "Course Notebooks"}
+          desc={isRtl 
+            ? "סדר את התרגילים לפי קורסים (אינפי, אלגברה לינארית, פיזיקה). הכל מסונכרן לענן באופן מאובטח." 
+            : "Organize your calculations and homework assignments into courses. Everything is securely stored."}
+          accentColor="from-blue-500 to-indigo-600"
+        />
+        <FeatureHighlightCard
+          icon="school"
+          title={isRtl ? "כרטיסיות לשינון" : "Spaced Repetition"}
+          desc={isRtl 
+            ? "טעית בתרגיל? הוסף אותו בלחיצה אחת לחפיסת הלייטרנר כדי לחזור עליו בדיוק בזמן הנכון." 
+            : "Made a mistake? Add it directly to your Leitner practice deck to review it at mathematically optimal intervals."}
+          accentColor="from-purple-500 to-pink-600"
+        />
+        <FeatureHighlightCard
+          icon="assignment"
+          title={isRtl ? "סימולטור מבחנים" : "Exam Simulator"}
+          desc={isRtl 
+            ? "התכונן למבחנים עם סימולציה מוגבלת בזמן. פתור מספר שאלות וקבל ציון ופירוט שגיאות רק בסוף." 
+            : "Prepare under timed conditions. Solve multiple problems, manage your time, and receive your comprehensive grade report at the end."}
+          accentColor="from-orange-500 to-red-600"
+        />
       </section>
+    </div>
+  );
+}
+
+function FeatureHighlightCard({ icon, title, desc, accentColor }: { icon: string; title: string; desc: string; accentColor: string }) {
+  return (
+    <div className="rounded-3xl border border-outline-variant/40 bg-surface-container-lowest/80 backdrop-blur-sm p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 group">
+      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accentColor} text-white shadow-md mb-5 group-hover:scale-110 transition-transform duration-300`}>
+        <span className="material-symbols-outlined text-2xl">{icon}</span>
+      </div>
+      <h3 className="note-title text-xl font-bold text-on-surface">
+        {title}
+      </h3>
+      <p className="text-xs text-on-surface-variant leading-relaxed mt-2.5 font-medium">
+        {desc}
+      </p>
     </div>
   );
 }
